@@ -136,46 +136,49 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; border: 0; b
 .scrim.open { display: block; }
 .mobile-menu { display: none; }
 
-/* СТРОГИЕ И УСТОЙЧИВЫЕ МОДАЛКИ ДЛЯ МИНИ-ПРИЛОЖЕНИЙ */
+/* ПОЛНОЭКРАННЫЕ МОДАЛЬНЫЕ ОКНА НА ВСЮ ВЫСОТУ/ШИРИНУ */
 .modal-layer { 
   position: fixed; 
   inset: 0; 
   z-index: 999; 
   display: none; 
-  align-items: flex-end; 
+  align-items: center; 
   justify-content: center; 
   background: #050b13cc; 
-  backdrop-filter: blur(6px); 
-  padding: 0;
+  backdrop-filter: blur(8px); 
+  padding: 12px;
 }
 .modal-layer.open { display: flex; }
 .modal { 
   width: 100%; 
-  max-width: 600px;
-  max-height: 75vh; 
+  max-width: 560px;
+  height: 90vh; /* Почти во весь экран по высоте */
+  max-height: 680px;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto; 
   -webkit-overflow-scrolling: touch;
-  padding: 20px 16px; 
-  border-radius: 28px 28px 0 0; 
+  padding: 24px 20px; 
+  border-radius: 28px; 
   background: var(--surface-container); 
-  border-top: 1px solid var(--outline); 
-  box-shadow: 0 -10px 40px #0008; 
-  animation: slideUp 0.2s ease;
+  border: 1px solid var(--outline); 
+  box-shadow: 0 20px 60px #0009; 
+  animation: scaleIn 0.2s ease;
 }
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; position: sticky; top: -20px; background: var(--surface-container); padding: 5px 0; z-index: 5; }
-.modal h2 { font-size: 18px; font-weight: 900; margin: 0; }
-.close-modal { height: 36px; width: 36px; border: 0; border-radius: 50%; background: var(--surface-high); color: var(--primary); display: grid; place-items: center; flex: none; }
-.field { display: grid; gap: 5px; margin: 10px 0; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; position: sticky; top: 0; background: var(--surface-container); padding-bottom: 8px; z-index: 5; border-bottom: 1px solid #ffffff10; }
+.modal h2 { font-size: 20px; font-weight: 900; margin: 0; }
+.close-modal { height: 38px; width: 38px; border: 0; border-radius: 50%; background: var(--surface-high); color: var(--primary); display: grid; place-items: center; flex: none; }
+.field { display: grid; gap: 6px; margin: 12px 0; }
 .field label { font-size: 12px; color: var(--muted); font-weight: 900; }
-.field input, .field textarea, .field select, .setting select { width: 100%; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface-low); color: var(--text); outline: none; font-size: 14px; }
+.field input, .field textarea, .field select, .setting select { width: 100%; padding: 12px 14px; border: 1px solid var(--outline); border-radius: 14px; background: var(--surface-low); color: var(--text); outline: none; font-size: 14px; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--primary); }
-.field textarea { min-height: 75px; resize: vertical; }
-.help { font-size: 11px; color: var(--muted); line-height: 1.4; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-bottom: env(safe-area-inset-bottom); }
-.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ffffff15; }
-.setting select { max-width: 150px; }
+.field textarea { min-height: 90px; resize: vertical; }
+.help { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 16px; }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #ffffff15; }
+.setting select { max-width: 160px; }
 
 .toast { position: fixed; z-index: 1000; left: 50%; bottom: 22px; transform: translate(-50%, 18px); opacity: 0; pointer-events: none; background: #d7f5ed; color: #07383e; padding: 11px 18px; border-radius: 999px; font-weight: 900; transition: 0.2s; max-width: 90vw; text-align: center; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -198,6 +201,8 @@ body.light { color-scheme: light; --bg: #edf4f8; --surface: #f6fbff; --surface-c
   .chat { min-height: calc(100dvh - 110px); }
   .message { max-width: 94%; }
   .btn-text { display: none; }
+  /* На смартфонах модалка во весь экран */
+  .modal { height: 100vh; max-height: 100vh; border-radius: 0; padding: 16px; }
 }
 </style>
 </head>
@@ -307,20 +312,20 @@ body.light { color-scheme: light; --bg: #edf4f8; --surface: #f6fbff; --surface-c
       <h2 data-i18n="apiTitle">Настройки API</h2>
       <button class="close-modal" data-action="close-modal" data-target="api-modal"><span class="material-symbols-rounded">close</span></button>
     </div>
-    <p class="help" data-i18n="apiInfo">Добавь API-ключ от Google Gemini или OpenRouter.</p>
+    <p class="help" data-i18n="apiInfo">Настройки подключения к API.</p>
     <div class="field">
       <label data-i18n="keyLabel">API-ключ</label>
-      <input id="api-key" type="password" autocomplete="new-password" placeholder="AIzaSy...">
-      <div class="help" data-i18n="keyHelp">Ключ хранится локально в этом браузере.</div>
+      <input id="api-key" type="password" autocomplete="new-password">
+      <div class="help" data-i18n="keyHelp">Ключ уже встроен и сохранен.</div>
     </div>
     <div class="field">
       <label data-i18n="endpoint">API Endpoint</label>
-      <input id="api-endpoint" value="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions">
-      <div class="help">Для Google Gemini (OpenAI формат)</div>
+      <input id="api-endpoint" value="https://api.mistral.ai/v1/chat/completions">
+      <div class="help">Для Mistral AI</div>
     </div>
     <div class="field">
       <label data-i18n="model">Модель</label>
-      <input id="api-model" value="gemini-2.0-flash">
+      <input id="api-model" value="mistral-small-latest">
     </div>
     <div class="modal-actions">
       <button class="md-btn md-btn-outlined" data-action="close-modal" data-target="api-modal" data-i18n="cancel">Отмена</button>
@@ -392,15 +397,15 @@ body.light { color-scheme: light; --bg: #edf4f8; --surface: #f6fbff; --surface-c
 
 <script>
 (()=>{'use strict';
-const DEFAULT_KEY = "";
+const EMBEDDED_KEY = "mstrl_3tyH2Q3lmZC3u1eV3xskLlEhKRoRtNey_332ICL";
 
 const $=id=>document.getElementById(id);
 const LANGS=[['ru','RU','Русский'],['kk','KZ','Қазақша'],['en','EN','English'],['es','ES','Español'],['zh','ZH','中文'],['fr','FR','Français'],['de','DE','Deutsch'],['ja','JA','日本語'],['ko','KO','한국어'],['ar','AR','العربية'],['tr','TR','Türkçe'],['pt','PT','Português'],['it','IT','Italiano'],['pl','PL','Polski'],['uk','UK','Українська']];
 
-const EN={tagline:'A calm space for ideas',apiSettings:'API settings',newChat:'New chat',recent:'Recent chats',personality:'AI personality',preferences:'Settings',clearAll:'Clear chats',welcomeBadge:'Your personal AI space',hero1:'Think clearly.',hero2:'Create freely.',heroText:'A thoughtful AI chat for ideas, questions and discoveries.',startChat:'Start a conversation',customize:'Customize BlissAI',messagePlaceholder:'Message BlissAI…',disclaimer:'BlissAI can make mistakes. Check important information.',apiTitle:'API settings',apiInfo:'Add an API key from Google Gemini or OpenRouter.',keyLabel:'API key',keyHelp:'The key is stored in this browser.',model:'Model',cancel:'Cancel',save:'Save',personalityTitle:'AI personality',style:'Response style',friendly:'Friendly and helpful',concise:'Short and direct',creative:'Creative',rude:'Playfully sarcastic',custom:'Custom instructions',systemPrompt:'System instructions',promptHint:'Describe how BlissAI should respond…',preferencesTitle:'Settings',appearance:'Appearance',appearanceHint:'Choose a theme',dark:'Dark',light:'Light',spacing:'Chat density',spacingHint:'Message spacing',normal:'Comfortable',compact:'Compact',enterSend:'Enter to send',enterHint:'Shift + Enter for a new line',done:'Done',empty:'No chats yet. Create a new one!',newTitle:'New conversation',thinking:'Thinking…',welcome:'Hello! I’m BlissAI. What would you like to discuss?',deleted:'Chat deleted',cleared:'All chats cleared',confirmClear:'Delete all saved chats?',saved:'Settings saved',apiSaved:'API settings saved',sendError:'Could not get a reply. Check API key and endpoint.',imageOnly:'Image message',imageBig:'Image is too large (max 8 MB).',removeImage:'Remove image'};
-const RU={tagline:'Спокойное пространство для идей',apiSettings:'Настройки API',newChat:'Новый чат',recent:'Недавние чаты',personality:'Личность ИИ',preferences:'Настройки',clearAll:'Очистить чаты',welcomeBadge:'Твое личное пространство ИИ',hero1:'Думай ясно.',hero2:'Создавай свободно.',heroText:'Удобный ИИ-чат для идей, вопросов и открытий.',startChat:'Начать разговор',customize:'Настроить BlissAI',messagePlaceholder:'Напиши сообщение BlissAI…',disclaimer:'BlissAI может ошибаться. Проверяй важную информацию.',apiTitle:'Настройки API',apiInfo:'Добавь API-ключ от Google Gemini или OpenRouter.',keyLabel:'API-ключ',keyHelp:'Ключ хранится локально в этом браузере.',model:'Модель',cancel:'Отмена',save:'Сохранить',personalityTitle:'Личность ИИ',style:'Стиль ответов',friendly:'Дружелюбный помощник',concise:'Кратко и по делу',creative:'Креативный',rude:'Шутливо саркастичный',custom:'Свои инструкции',systemPrompt:'Системные инструкции',promptHint:'Опиши, как должен отвечать BlissAI…',preferencesTitle:'Настройки',appearance:'Оформление',appearanceHint:'Выбери тему',dark:'Тёмная',light:'Светлая',spacing:'Плотность чата',spacingHint:'Расстояние между сообщениями',normal:'Обычная',compact:'Компактная',enterSend:'Enter отправляет',enterHint:'Shift + Enter — новая строка',done:'Готово',empty:'Чатов пока нет. Создай новый!',newTitle:'Новый разговор',thinking:'Думаю…',welcome:'Привет! Я BlissAI. О чём поговорим?',deleted:'Чат удалён',cleared:'Все чаты очищены',confirmClear:'Удалить все сохранённые чаты?',saved:'Настройки сохранены',apiSaved:'Настройки API сохранены',sendError:'Не удалось получить ответ. Проверь API-ключ и интернет.',imageOnly:'Изображение',imageBig:'Изображение слишком большое (макс. 8 МБ).',removeImage:'Удалить изображение'};
-const KK={tagline:'Идеяларға арналған жайлы кеңістік',apiSettings:'API баптаулары',newChat:'Жаңа чат',recent:'Соңғы чаттар',personality:'AI мінезі',preferences:'Баптаулар',clearAll:'Чаттарды тазалау',welcomeBadge:'Сенің жеке AI кеңістігің',hero1:'Анық ойла.',hero2:'Еркін жаса.',heroText:'Идеялар мен сұрақтарға арналған AI чат.',startChat:'Әңгіме бастау',customize:'BlissAI баптау',messagePlaceholder:'BlissAI-ге жаз…',disclaimer:'BlissAI қателесуі мүмкін. Маңызды ақпаратты тексер.',apiTitle:'API баптаулары',apiInfo:'Google Gemini немесе OpenRouter API кілтін енгіз.',keyLabel:'API кілті',keyHelp:'Кілт браузерде сақталады.',model:'Модель',cancel:'Болдырмау',save:'Сақтау',personalityTitle:'AI мінезі',style:'Жауап беру стилі',friendly:'Мейірімді көмекші',concise:'Қысқа әрі нақты',creative:'Шығармашыл',rude:'Әзілқой мысқыл',custom:'Өз нұсқауың',systemPrompt:'Жүйелік нұсқаулар',promptHint:'BlissAI қалай жауап беруі керегін жаз…',preferencesTitle:'Баптаулар',appearance:'Көрініс',appearanceHint:'Тақырыпты таңда',dark:'Қараңғы',light:'Ашық',spacing:'Чат тығыздығы',spacingHint:'Хабарламалар аралығы',normal:'Қалыпты',compact:'Ықшам',enterSend:'Enter жіберу',enterHint:'Shift + Enter — жаңа жол',done:'Дайын',empty:'Әзірге чат жоқ. Жаңасын баста!',newTitle:'Новый разговор',thinking:'Ойланып жатырмын…',welcome:'Сәлем! Мен BlissAI-мын. Не туралы сөйлесеміз?',deleted:'Чат өшірілді',cleared:'Барлық чат өшірілді',confirmClear:'Барлық чатты өшіресің бе?',saved:'Баптаулар сақталды',apiSaved:'API баптаулары сақталды',sendError:'Жауап алу мүмкін болмады. API кілтін тексер.',imageOnly:'Сурет',imageBig:'Сурет тым үлкен (8 МБ дейін).',removeImage:'Суретті өшіру'};
-const EXTRA={es:{apiSettings:'Ajustes API',newChat:'Nuevo chat',recent:'Chats recientes',personality:'Personalidad IA',preferences:'Ajustes',clearAll:'Borrar chats',welcomeBadge:'Tu espacio personal de IA',hero1:'Piensa con claridad.',hero2:'Crea libremente.',heroText:'Un chat de IA para ideas y preguntas.',startChat:'Iniciar conversación',customize:'Personalizar BlissAI',messagePlaceholder:'Escribe a BlissAI…',apiTitle:'Ajustes API',keyLabel:'Clave API',cancel:'Cancelar',save:'Guardar',done:'Listo'},fr:{apiSettings:'Paramètres API',newChat:'Nouveau chat',recent:'Chats récents',personality:'Personnalité IA',preferences:'Paramètres',clearAll:'Effacer les chats',welcomeBadge:'Votre espace IA',hero1:'Pensez clairement.',hero2:'Créez librement.',heroText:'Un chat IA pour vos idées.',startChat:'Démarrer une discussion',customize:'Personnaliser BlissAI',messagePlaceholder:'Écrire à BlissAI…',cancel:'Annuler',save:'Enregistrer',done:'Terminé'},de:{apiSettings:'API-Einstellungen',newChat:'Neuer Chat',recent:'Letzte Chats',personality:'KI-Persönlichkeit',preferences:'Einstellungen',clearAll:'Chats löschen',welcomeBadge:'Dein KI-Bereich',hero1:'Klar denken.',hero2:'Frei gestalten.',heroText:'Ein KI-Chat für Ideen.',startChat:'Gespräch beginnen',customize:'BlissAI anpassen',messagePlaceholder:'Nachricht an BlissAI…',cancel:'Abbrechen',save:'Speichern',done:'Fertig'},zh:{apiSettings:'API 设置',newChat:'新建聊天',recent:'最近聊天',personality:'AI 个性',preferences:'设置',clearAll:'清空聊天',welcomeBadge:'个人 AI 空间',hero1:'清晰思考。',hero2:'自由创造。',heroText:'用于灵感和问题的 AI 聊天。',startChat:'开始对话',customize:'自定义 BlissAI',messagePlaceholder:'发送消息…',cancel:'取消',save:'保存',done:'完成'},ja:{apiSettings:'API設定',newChat:'新しいチャット',recent:'最近のチャット',personality:'AIの性格',preferences:'設定',clearAll:'削除',welcomeBadge:'AIスペース',hero1:'明確に考える。',hero2:'自由に創造する。',heroText:'アイデアのためのAIチャット。',startChat:'会話を始める',customize:'設定',messagePlaceholder:'入力…',cancel:'キャンセル',save:'保存',done:'完了'},ko:{apiSettings:'API 설정',newChat:'새 채팅',recent:'최근 채팅',personality:'AI 성격',preferences:'설정',clearAll:'채팅 삭제',welcomeBadge:'나만의 AI 공간',hero1:'명확하게 생각하고.',hero2:'자유롭게 만들어 보세요.',heroText:'아이디어를 위한 AI 채팅.',startChat:'대화 시작',customize:'설정',messagePlaceholder:'메시지 입력…',cancel:'취소',save:'저장',done:'완료'},ar:{apiSettings:'إعدادات API',newChat:'محادثة جديدة',recent:'المحادثات الأخيرة',personality:'شخصية AI',preferences:'الإعدادات',clearAll:'مسح',welcomeBadge:'مساحتك الشخصية',hero1:'فكّر بوضوح.',hero2:'ابتكر بحرية.',heroText:'دردشة للأفكار.',startChat:'ابدأ محادثة',customize:'تخصيص',messagePlaceholder:'اكتب رسالة…',cancel:'إلغاء',save:'حفظ',done:'تم'},tr:{apiSettings:'API ayarları',newChat:'Yeni sohbet',recent:'Son sohbetler',personality:'Yapay zekâ kişiliği',preferences:'Ayarlar',clearAll:'Sohbetleri sil',welcomeBadge:'Kişisel AI alanın',hero1:'Net düşün.',hero2:'Özgürce üret.',heroText:'Fikirler için AI sohbeti.',startChat:'Sohbet başlat',customize:'Özelleştir',messagePlaceholder:'BlissAI’ye yaz…',cancel:'İptal',save:'Kaydet',done:'Tamam'},pt:{apiSettings:'Configurações da API',newChat:'Novo chat',recent:'Chats recentes',personality:'Personalidade da IA',preferences:'Configurações',clearAll:'Apagar chats',welcomeBadge:'Seu espaço de IA',hero1:'Pense com clareza.',hero2:'Crie livremente.',heroText:'Um chat de IA para ideias.',startChat:'Iniciar conversa',customize:'Personalizar',messagePlaceholder:'Mensagem…',cancel:'Cancelar',save:'Salvar',done:'Concluído'},it:{apiSettings:'Impostazioni API',newChat:'Nuova chat',recent:'Chat recenti',personality:'Personalità IA',preferences:'Impostazioni',clearAll:'Elimina chat',welcomeBadge:'Il tuo spazio IA',hero1:'Pensa con chiarezza.',hero2:'Crea liberamente.',heroText:'Una chat IA per idee.',startChat:'Inizia',customize:'Personalizza',messagePlaceholder:'Scrivi…',cancel:'Annulla',save:'Salva',done:'Fatto'},pl:{apiSettings:'Ustawienia API',newChat:'Nowy czat',recent:'Ostatnie czaty',personality:'Osobowość AI',preferences:'Ustawienia',clearAll:'Usuń czaty',welcomeBadge:'Twoja przestrzeń AI',hero1:'Myśl jasno.',hero2:'Twórz swobodnie.',heroText:'Czat AI do pomysłów.',startChat:'Rozpocznij',customize:'Dostosuj',messagePlaceholder:'Napisz…',cancel:'Anuluj',save:'Zapisz',done:'Gotowe'},uk:{apiSettings:'Налаштування API',newChat:'Новий чат',recent:'Останні чати',personality:'Особистість ШІ',preferences:'Налаштування',clearAll:'Очистити чати',welcomeBadge:'Особистий простір ШІ',hero1:'Думай чітко.',hero2:'Твори вільно.',heroText:'ШІ-чат для ідей.',startChat:'Почати розмову',customize:'Налаштувати',messagePlaceholder:'Напиши…',cancel:'Скасувати',save:'Зберегти',done:'Готово'}};
+const EN={tagline:'A calm space for ideas',apiSettings:'API settings',newChat:'New chat',recent:'Recent chats',personality:'AI personality',preferences:'Settings',clearAll:'Clear chats',welcomeBadge:'Your personal AI space',hero1:'Think clearly.',hero2:'Create freely.',heroText:'A thoughtful AI chat for ideas, questions and discoveries.',startChat:'Start a conversation',customize:'Customize BlissAI',messagePlaceholder:'Message BlissAI…',disclaimer:'BlissAI can make mistakes. Check important information.',apiTitle:'API settings',apiInfo:'API connection settings.',keyLabel:'API key',keyHelp:'The key is built-in and saved.',model:'Model',cancel:'Cancel',save:'Save',personalityTitle:'AI personality',style:'Response style',friendly:'Friendly and helpful',concise:'Short and direct',creative:'Creative',rude:'Playfully sarcastic',custom:'Custom instructions',systemPrompt:'System instructions',promptHint:'Describe how BlissAI should respond…',preferencesTitle:'Settings',appearance:'Appearance',appearanceHint:'Choose a theme',dark:'Dark',light:'Light',spacing:'Chat density',spacingHint:'Message spacing',normal:'Comfortable',compact:'Compact',enterSend:'Enter to send',enterHint:'Shift + Enter for a new line',done:'Done',empty:'No chats yet. Create a new one!',newTitle:'New conversation',thinking:'Thinking…',welcome:'Hello! I’m BlissAI. What would you like to discuss?',deleted:'Chat deleted',cleared:'All chats cleared',confirmClear:'Delete all saved chats?',saved:'Settings saved',apiSaved:'API settings saved',sendError:'Could not get a reply. Check API key and endpoint.',imageOnly:'Image message',imageBig:'Image is too large (max 8 MB).',removeImage:'Remove image'};
+const RU={tagline:'Спокойное пространство для идей',apiSettings:'Настройки API',newChat:'Новый чат',recent:'Недавние чаты',personality:'Личность ИИ',preferences:'Настройки',clearAll:'Очистить чаты',welcomeBadge:'Твое личное пространство ИИ',hero1:'Думай ясно.',hero2:'Создавай свободно.',heroText:'Удобный ИИ-чат для идей, вопросов и открытий.',startChat:'Начать разговор',customize:'Настроить BlissAI',messagePlaceholder:'Напиши сообщение BlissAI…',disclaimer:'BlissAI может ошибаться. Проверяй важную информацию.',apiTitle:'Настройки API',apiInfo:'Настройки подключения к API.',keyLabel:'API-ключ',keyHelp:'Ключ уже встроен и сохранен.',model:'Модель',cancel:'Отмена',save:'Сохранить',personalityTitle:'Личность ИИ',style:'Стиль ответов',friendly:'Дружелюбный помощник',concise:'Кратко и по делу',creative:'Креативный',rude:'Шутливо саркастичный',custom:'Свои инструкции',systemPrompt:'Системные инструкции',promptHint:'Опиши, как должен отвечать BlissAI…',preferencesTitle:'Настройки',appearance:'Оформление',appearanceHint:'Выбери тему',dark:'Тёмная',light:'Светлая',spacing:'Плотность чата',spacingHint:'Расстояние между сообщениями',normal:'Обычная',compact:'Компактная',enterSend:'Enter отправляет',enterHint:'Shift + Enter — новая строка',done:'Готово',empty:'Чатов пока нет. Создай новый!',newTitle:'Новый разговор',thinking:'Думаю…',welcome:'Привет! Я BlissAI. О чём поговорим?',deleted:'Чат удалён',cleared:'Все чаты очищены',confirmClear:'Удалить все сохранённые чаты?',saved:'Настройки сохранены',apiSaved:'Настройки API сохранены',sendError:'Не удалось получить ответ. Проверь API-ключ и интернет.',imageOnly:'Изображение',imageBig:'Изображение слишком большое (макс. 8 МБ).',removeImage:'Удалить изображение'};
+const KK={tagline:'Идеяларға арналған жайлы кеңістік',apiSettings:'API баптаулары',newChat:'Жаңа чат',recent:'Соңғы чаттар',personality:'AI мінезі',preferences:'Баптаулар',clearAll:'Чаттарды тазалау',welcomeBadge:'Сенің жеке AI кеңістігің',hero1:'Анық ойла.',hero2:'Еркін жаса.',heroText:'Идеялар мен сұрақтарға арналған AI чат.',startChat:'Әңгіме бастау',customize:'BlissAI баптау',messagePlaceholder:'BlissAI-ге жаз…',disclaimer:'BlissAI қателесуі мүмкін. Маңызды ақпаратты тексер.',apiTitle:'API баптаулары',apiInfo:'API қосылым баптаулары.',keyLabel:'API кілті',keyHelp:'Кілт енгізіліп, сақталды.',model:'Модель',cancel:'Болдырмау',save:'Сақтау',personalityTitle:'AI мінезі',style:'Жауап беру стилі',friendly:'Мейірімді көмекші',concise:'Қысқа әрі нақты',creative:'Шығармашыл',rude:'Әзілқой мысқыл',custom:'Өз нұсқауың',systemPrompt:'Жүйелік нұсқаулар',promptHint:'BlissAI қалай жауап беруі керегін жаз…',preferencesTitle:'Баптаулар',appearance:'Көрініс',appearanceHint:'Тақырыпты таңда',dark:'Қараңғы',light:'Ашық',spacing:'Чат тығыздығы',spacingHint:'Хабарламалар аралығы',normal:'Қалыпты',compact:'Ықшам',enterSend:'Enter жіберу',enterHint:'Shift + Enter — жаңа жол',done:'Дайын',empty:'Әзірге чат жоқ. Жаңасын баста!',newTitle:'Новый разговор',thinking:'Ойланып жатырмын…',welcome:'Сәлем! Мен BlissAI-мын. Не туралы сөйлесеміз?',deleted:'Чат өшірілді',cleared:'Барлық чат өшірілді',confirmClear:'Барлық чатты өшіресің бе?',saved:'Баптаулар сақталды',apiSaved:'API баптаулары сақталды',sendError:'Жауап алу мүмкін болмады. API кілтін тексер.',imageOnly:'Сурет',imageBig:'Сурет тым үлкен (8 МБ дейін).',removeImage:'Суретті өшіру'};
+const EXTRA={es:{apiSettings:'Ajustes API',newChat:'Nuevo chat',recent:'Chats recientes',personality:'Personalidad IA',preferences:'Ajustes',clearAll:'Borrar chats',welcomeBadge:'Tu espacio personal de IA',hero1:'Piensa con claridad.',hero2:'Crea libremente.',heroText:'Un chat de IA para ideas y preguntas.',startChat:'Iniciar conversación',customize:'Personalizar BlissAI',messagePlaceholder:'Escribe a BlissAI…',apiTitle:'Ajustes API',keyLabel:'Clave API',cancel:'Cancelar',save:'Guardar',done:'Listo'},fr:{apiSettings:'Paramètres API',newChat:'Nouveau chat',recent:'Chats récents',personality:'Personnalité IA',preferences:'Paramètres',clearAll:'Effacer les chats',welcomeBadge:'Votre espace IA',hero1:'Pensez clairement.',hero2:'Créez librement.',heroText:'Un chat IA pour vos idées.',startChat:'Démarrer une discussion',customize:'Personaliser BlissAI',messagePlaceholder:'Écrire à BlissAI…',cancel:'Annuler',save:'Enregistrer',done:'Terminé'},de:{apiSettings:'API-Einstellungen',newChat:'Neuer Chat',recent:'Letzte Chats',personality:'KI-Persönlichkeit',preferences:'Einstellungen',clearAll:'Chats löschen',welcomeBadge:'Dein KI-Bereich',hero1:'Klar denken.',hero2:'Frei gestalten.',heroText:'Ein KI-Chat für Ideen.',startChat:'Gespräch beginnen',customize:'BlissAI anpassen',messagePlaceholder:'Nachricht an BlissAI…',cancel:'Abbrechen',save:'Speichern',done:'Fertig'},zh:{apiSettings:'API 设置',newChat:'新建聊天',recent:'最近聊天',personality:'AI 个性',preferences:'设置',clearAll:'清空聊天',welcomeBadge:'个人 AI 空间',hero1:'清晰思考。',hero2:'自由创造。',heroText:'用于灵感和问题的 AI 聊天。',startChat:'开始对话',customize:'自定义 BlissAI',messagePlaceholder:'发送消息…',cancel:'取消',save:'保存',done:'完成'},ja:{apiSettings:'API設定',newChat:'新しいチャット',recent:'最近のチャット',personality:'AIの性格',preferences:'設定',clearAll:'削除',welcomeBadge:'AIスペース',hero1:'明確に考える。',hero2:'自由に創造する。',heroText:'アイデアのためのAIチャット。',startChat:'会話を始める',customize:'設定',messagePlaceholder:'入力…',cancel:'キャンセル',save:'保存',done:'完了'},ko:{apiSettings:'API 설정',newChat:'새 채팅',recent:'최근 채팅',personality:'AI 성격',preferences:'설정',clearAll:'채팅 삭제',welcomeBadge:'나만의 AI 공간',hero1:'명확하게 생각하고.',hero2:'자유롭게 만들어 보세요.',heroText:'아이디어를 위한 AI 채팅.',startChat:'대화 시작',customize:'설정',messagePlaceholder:'메시지 입력…',cancel:'취소',save:'저장',done:'완료'},ar:{apiSettings:'إعدادات API',newChat:'محادثة جديدة',recent:'المحادثات الأخيرة',personality:'شخصية AI',preferences:'الإعدادات',clearAll:'مسح',welcomeBadge:'مساحتك الشخصية',hero1:'فكّر بوضوح.',hero2:'ابتكر بحرية.',heroText:'دردشة للأفكار.',startChat:'ابدأ محادثة',customize:'تخصيص',messagePlaceholder:'اكتب رسالة…',cancel:'إلغاء',save:'حفظ',done:'تم'},tr:{apiSettings:'API ayarları',newChat:'Yeni sohbet',recent:'Son sohbetler',personality:'Yapay zekâ kişiliği',preferences:'Ayarlar',clearAll:'Sohbetleri sil',welcomeBadge:'Kişisel AI alanın',hero1:'Net düşün.',hero2:'Özgürce üret.',heroText:'Fikirler için AI sohbeti.',startChat:'Sohbet başlat',customize:'Özelleştir',messagePlaceholder:'BlissAI’ye yaz…',cancel:'İptal',save:'Kaydet',done:'Tamam'},pt:{apiSettings:'Configurações da API',newChat:'Novo chat',recent:'Chats recentes',personality:'Personalidade da IA',preferences:'Configurações',clearAll:'Apagar chats',welcomeBadge:'Seu espaço de IA',hero1:'Pense com clareza.',hero2:'Crie livremente.',heroText:'Um chat de IA para ideias.',startChat:'Iniciar conversa',customize:'Personalizar',messagePlaceholder:'Mensagem…',cancel:'Cancelar',save:'Salvar',done:'Concluído'},it:{apiSettings:'Impostazioni API',newChat:'Nuova chat',recent:'Chat recenti',personality:'Personalità IA',preferences:'Impostazioni',clearAll:'Elimina chat',welcomeBadge:'Il tuo spazio IA',hero1:'Pensa con chiarezza.',hero2:'Crea liberamente.',heroText:'Una chat IA per idee.',startChat:'Inizia',customize:'Personalizza',messagePlaceholder:'Scrivi…',cancel:'Annulla',save:'Salva',done:'Fatto'},pl:{apiSettings:'Ustawienia API',newChat:'Nowy czat',recent:'Ostatnie czaty',personality:'Osobowość AI',preferences:'Ustawienia',clearAll:'Usuń czaty',welcomeBadge:'Twoja przestrzeń AI',hero1:'Myśl jasno.',hero2:'Twórz swobodnie.',heroText:'Czat AI do pomysłów.',startChat:'Rozpocznij',customize:'Dostosuj',messagePlaceholder:'Napisz…',cancel:'Anuluj',save:'Zapisz',done:'Gotowe'},uk:{apiSettings:'Налаштування API',newChat:'Новий чат',recent:'Останні чати',personality:'Особистість ШІ',preferences:'Налаштування',clearAll:'Очистити чати',welcomeBadge:'Особистий простір ШІ',hero1:'Думай чітко.',hero2:'Твори вільно.',heroText:'ШІ-чат для ідей.',startChat:'Почати розмову',customize:'Налаштувати',messagePlaceholder:'Напиши…',cancel:'Скасувати',save:'Зберегти',done:'Готово'}};
 
 const DICT={en:EN,ru:RU,kk:KK,...EXTRA};
 let lang=localStorage.getItem('bliss.lang')||'ru';
@@ -418,6 +423,10 @@ function current(){return chats.find(c=>c.id===activeId)||null}
 function persist(){localStorage.setItem('bliss.chats',JSON.stringify(chats));localStorage.setItem('bliss.active',activeId||'')}
 function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2300)}
 function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+function getKey(){
+  return localStorage.getItem('bliss.apiKey') || EMBEDDED_KEY;
+}
 
 function translate(){
   document.documentElement.lang=lang;
@@ -476,10 +485,9 @@ function closeModal(which){$(which)?.classList.remove('open')}
 function closeSidebar(){$('sidebar').classList.remove('open');$('scrim').classList.remove('open')}
 
 function openApi(){
-  const savedKey = localStorage.getItem('bliss.apiKey');
-  $('api-key').value = savedKey ? savedKey : '';
-  $('api-endpoint').value = localStorage.getItem('bliss.endpoint') || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-  $('api-model').value = localStorage.getItem('bliss.model') || 'gemini-2.0-flash';
+  $('api-key').value = getKey();
+  $('api-endpoint').value = localStorage.getItem('bliss.endpoint') || 'https://api.mistral.ai/v1/chat/completions';
+  $('api-model').value = localStorage.getItem('bliss.model') || 'mistral-small-latest';
   openModal('api-modal');
 }
 
@@ -509,8 +517,8 @@ function applyPrefs(){
 function saveApi(){
   const key=$('api-key').value.trim();
   if(key) localStorage.setItem('bliss.apiKey',key);
-  localStorage.setItem('bliss.endpoint',$('api-endpoint').value.trim()||'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
-  localStorage.setItem('bliss.model',$('api-model').value.trim()||'gemini-2.0-flash');
+  localStorage.setItem('bliss.endpoint',$('api-endpoint').value.trim()||'https://api.mistral.ai/v1/chat/completions');
+  localStorage.setItem('bliss.model',$('api-model').value.trim()||'mistral-small-latest');
   closeModal('api-modal');
   toast(tr('apiSaved'));
 }
@@ -544,7 +552,7 @@ async function send(){
   const input=$('prompt'),text=input.value.trim();
   if((!text&&!attachments.length)||sending)return;
   
-  const key=localStorage.getItem('bliss.apiKey') || DEFAULT_KEY;
+  const key=getKey();
   if(!current())newChat();
   
   const chat=current(),images=attachments.map(x=>x.data);
@@ -569,8 +577,8 @@ async function send(){
   $('messages').append(wait);
   
   try{
-    const model = localStorage.getItem('bliss.model') || 'gemini-2.0-flash';
-    const url = localStorage.getItem('bliss.endpoint') || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    const model = localStorage.getItem('bliss.model') || 'mistral-small-latest';
+    const url = localStorage.getItem('bliss.endpoint') || 'https://api.mistral.ai/v1/chat/completions';
     
     const messages = [
       { role: 'system', content: personaPrompt() },
@@ -713,4 +721,4 @@ renderMessages();
 })();
 </script>
 </body>
-  </html>
+</html>
