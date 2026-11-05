@@ -136,50 +136,53 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; border: 0; b
 .scrim.open { display: block; }
 .mobile-menu { display: none; }
 
-/* ИСПРАВЛЕННЫЕ СТИЛИ МОДАЛКЕ В МИНИ-ПРИЛОЖЕНИЯХ */
+/* СТРОГИЕ И УСТОЙЧИВЫЕ МОДАЛКИ ДЛЯ МИНИ-ПРИЛОЖЕНИЙ */
 .modal-layer { 
   position: fixed; 
   inset: 0; 
-  z-index: 60; 
+  z-index: 999; 
   display: none; 
-  align-items: flex-end; /* На мобилках выравниваем снизу или по центру с отступами */
+  align-items: flex-end; 
   justify-content: center; 
-  padding: 10px; 
-  background: #050b13bb; 
-  backdrop-filter: blur(8px); 
+  background: #050b13cc; 
+  backdrop-filter: blur(6px); 
+  padding: 0;
 }
 .modal-layer.open { display: flex; }
 .modal { 
-  width: min(100%, 540px); 
-  max-height: 82vh; /* Ограничиваем высоту, чтобы не вылезать за экран */
-  overflow-y: auto; /* Включаем вертикальный скролл внутри модалки */
+  width: 100%; 
+  max-width: 600px;
+  max-height: 75vh; 
+  overflow-y: auto; 
   -webkit-overflow-scrolling: touch;
-  padding: 18px; 
-  border-radius: 28px 28px 20px 20px; 
+  padding: 20px 16px; 
+  border-radius: 28px 28px 0 0; 
   background: var(--surface-container); 
-  border: 1px solid var(--outline); 
-  box-shadow: 0 20px 70px #0006; 
+  border-top: 1px solid var(--outline); 
+  box-shadow: 0 -10px 40px #0008; 
+  animation: slideUp 0.2s ease;
 }
-.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; position: sticky; top: 0; background: var(--surface-container); padding-bottom: 6px; z-index: 5; }
-.modal h2 { font-size: 20px; font-weight: 900; margin: 0; }
-.close-modal { height: 38px; width: 38px; border: 0; border-radius: 50%; background: var(--surface-high); color: var(--primary); display: grid; place-items: center; flex: none; }
-.field { display: grid; gap: 6px; margin: 12px 0; }
-.field label { font-size: 12px; color: var(--muted); font-weight: 900; }
-.field input, .field textarea, .field select, .setting select { width: 100%; padding: 11px 12px; border: 1px solid var(--outline); border-radius: 14px; background: var(--surface-low); color: var(--text); outline: none; }
-.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--primary); }
-.field textarea { min-height: 85px; resize: vertical; }
-.help { font-size: 11px; color: var(--muted); line-height: 1.4; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 14px; padding-bottom: env(safe-area-inset-bottom); }
-.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid #ffffff15; }
-.setting select { max-width: 155px; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-.toast { position: fixed; z-index: 100; left: 50%; bottom: 22px; transform: translate(-50%, 18px); opacity: 0; pointer-events: none; background: #d7f5ed; color: #07383e; padding: 11px 18px; border-radius: 999px; font-weight: 900; transition: 0.2s; max-width: 90vw; text-align: center; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; position: sticky; top: -20px; background: var(--surface-container); padding: 5px 0; z-index: 5; }
+.modal h2 { font-size: 18px; font-weight: 900; margin: 0; }
+.close-modal { height: 36px; width: 36px; border: 0; border-radius: 50%; background: var(--surface-high); color: var(--primary); display: grid; place-items: center; flex: none; }
+.field { display: grid; gap: 5px; margin: 10px 0; }
+.field label { font-size: 12px; color: var(--muted); font-weight: 900; }
+.field input, .field textarea, .field select, .setting select { width: 100%; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface-low); color: var(--text); outline: none; font-size: 14px; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--primary); }
+.field textarea { min-height: 75px; resize: vertical; }
+.help { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-bottom: env(safe-area-inset-bottom); }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ffffff15; }
+.setting select { max-width: 150px; }
+
+.toast { position: fixed; z-index: 1000; left: 50%; bottom: 22px; transform: translate(-50%, 18px); opacity: 0; pointer-events: none; background: #d7f5ed; color: #07383e; padding: 11px 18px; border-radius: 999px; font-weight: 900; transition: 0.2s; max-width: 90vw; text-align: center; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 [hidden] { display: none !important; }
 body.compact .messages { gap: 8px; }
 body.light { color-scheme: light; --bg: #edf4f8; --surface: #f6fbff; --surface-container: #e3edf5; --surface-high: #d4e3ed; --surface-low: #f8fcff; --outline: #aabdc9; --text: #142b3b; --muted: #536c7c; --assistant: #dce9f1; --user: #bfe7e9; }
 
-@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media(max-width: 800px) {
   .layout { display: block; padding: 12px; min-height: calc(100dvh - 68px); }
   .topbar { height: 68px; }
@@ -195,7 +198,6 @@ body.light { color-scheme: light; --bg: #edf4f8; --surface: #f6fbff; --surface-c
   .chat { min-height: calc(100dvh - 110px); }
   .message { max-width: 94%; }
   .btn-text { display: none; }
-  .modal-layer { align-items: center; } /* На смартфонах модалка аккуратно по центру */
 }
 </style>
 </head>
@@ -262,7 +264,7 @@ body.light { color-scheme: light; --bg: #edf4f8; --surface: #f6fbff; --surface-c
           <span data-i18n="welcomeBadge">Твое личное пространство ИИ</span>
         </div>
         <h1><span data-i18n="hero1">Думай ясно.</span><br><span class="accent" data-i18n="hero2">Создавай свободно.</span></h1>
-        <p data-i18n="heroText">Удобный AI-чат для идей, вопросов и открытий. Настрой его характер под себя.</p>
+        <p data-i18n="heroText">Удобный ИИ-чат для идей, вопросов и открытий. Настрой его характер под себя.</p>
         <div class="welcome-actions">
           <button class="md-btn md-btn-filled" data-action="new-chat">
             <span class="material-symbols-rounded">add_comment</span>
@@ -711,4 +713,4 @@ renderMessages();
 })();
 </script>
 </body>
-</html>
+    </html>
