@@ -1,5 +1,0 @@
-<input-method xmlns:android="http://schemas.android.com/apk/res/android" android:supportsSwitchingToNextInputMethod="true" android:settingsActivity="com.blisskeyboard.SettingsActivity">
-  <subtype android:label="English" android:imeSubtypeLocale="en_US" android:imeSubtypeMode="keyboard" />
-  <subtype android:label="Русский" android:imeSubtypeLocale="ru_RU" android:imeSubtypeMode="keyboard" />
-  <subtype android:label="Қазақша" android:imeSubtypeLocale="kk_KZ" android:imeSubtypeMode="keyboard" />
-</input-method>
