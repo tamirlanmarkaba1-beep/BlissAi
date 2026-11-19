@@ -12,7 +12,8 @@ Nunito is downloaded at build time (falls back to the system font).
 Firebase is initialised from code (`data/FirebaseConfig.kt`); no `google-services.json` is needed.
 1. **Authentication → Sign-in method:** enable **Email/Password** and **Google**.
 2. **Firestore** and **Storage:** create, then deploy `firestore.rules` and `storage.rules` (set `adminEmail()` in `firestore.rules` to the e-mail that owns `@tomatik_dev`).
-3. **Google Sign-In:** add an Android app (package `com.bliss.blisschat`) in project settings with the SHA-1 of the keystore used to sign the app (for local debug builds, use the debug keystore SHA-1 reported by Android Studio's Gradle signing report). Then copy the **Web client ID** (Authentication → Google → Web SDK configuration) into `FirebaseConfig.WEB_CLIENT_ID`. Without it the Google button shows an explanatory message; e-mail login works regardless.
+3. **Google Sign-In:** add an Android app (package `com.bliss.blisschat`) in project settings with the SHA-1 of `app/blisschat.keystore`
+   (`keytool -list -v -keystore app/blisschat.keystore -alias blisschat -storepass blisschat`), then copy the **Web client ID** (Authentication → Google → Web SDK configuration) into `FirebaseConfig.WEB_CLIENT_ID`. Without it the Google button shows an explanatory message; e-mail login works regardless.
 4. **Calls across mobile networks / strict NAT** need a TURN server: add it to `FirebaseConfig.ICE_SERVERS`. Only Google STUN is configured.
 
 ## How the encryption works
@@ -30,3 +31,7 @@ Chats/groups with ✓/✓✓ checkmarks, long-press menus (own: delete for every
 - Group members are not cryptographically signed (a member could impersonate another member in the group).
 - Reactions, read receipts, profile data and avatars are not encrypted. Only photos are supported as media.
 - `usernames/{name}` is publicly `get`-able (needed for login by username) and exposes the e-mail.
+
+## Accounts from v1
+A v1 profile (no encryption key yet) is migrated automatically: log in with the **e-mail** and **any password (min. 6 chars)** – the password is saved, the old profile and @username are attached to the new account (chat history from v1 is not carried over). Works only once per account; afterwards the password is required. The v1 login e-mails were never verified, so anyone who knows such an e-mail could claim it first – deploy `firestore.rules` and log in once yourself soon after updating.
+**@tomatik_dev:** the rules require a verified e-mail equal to `adminEmail()`. The app e-mails a verification link on migration: open it, then sign out/in (or restart) and the admin profile is attached.

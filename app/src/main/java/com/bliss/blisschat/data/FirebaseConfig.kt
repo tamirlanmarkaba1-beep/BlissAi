@@ -10,7 +10,7 @@ import com.google.firebase.FirebaseOptions
  *
  * For Google Sign-In to work you must also:
  *  1. Firebase console > Project settings > Your apps: add an ANDROID app, package com.bliss.blisschat,
- *     with the SHA-1 of the keystore used to sign the app.
+ *     with SHA-1  BD:10:C9:FB:6F:FB:95:2E:AF:E1:A6:8E:A4:34:1B:F3:A8:E6:24:2D  (the key bundled in app/blisschat.keystore).
  *  2. Authentication > Sign-in method: enable Google and Email/Password.
  *  3. Paste the "Web client ID" (Authentication > Google > Web SDK configuration) into WEB_CLIENT_ID.
  *  4. (Recommended) put that Android app's App ID (1:794345122154:android:...) into APP_ID.

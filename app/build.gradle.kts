@@ -1,5 +1,3 @@
-import java.net.URL
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -10,6 +8,7 @@ plugins {
 android {
     namespace = "com.bliss.blisschat"
     compileSdk = 35
+
     defaultConfig {
         applicationId = "com.bliss.blisschat"
         minSdk = 26
@@ -18,9 +17,22 @@ android {
         versionName = "2.0.0"
     }
 
+    // Fixed key committed to the repo so the SHA-1 stays the same on every machine / CI run
+    // (Google Sign-In is bound to the SHA-1). Replace with your own keystore for a public release.
+    signingConfigs {
+        create("blisschat") {
+            storeFile = file("blisschat.keystore")
+            storePassword = "blisschat"
+            keyAlias = "blisschat"
+            keyPassword = "blisschat"
+        }
+    }
+
     buildTypes {
+        debug { signingConfig = signingConfigs.getByName("blisschat") }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("blisschat")
         }
     }
 
@@ -67,7 +79,7 @@ val downloadNunito by tasks.registering {
         )
         for (u in urls) {
             try {
-                URL(u).openStream().use { input ->
+                java.net.URL(u).openStream().use { input ->
                     target.outputStream().use { out -> input.copyTo(out) }
                 }
                 if (target.length() > 50_000) break else target.delete()

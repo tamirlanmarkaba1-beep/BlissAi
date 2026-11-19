@@ -24,8 +24,8 @@ service cloud.firestore {
       allow create: if me() == uid
         && request.resource.data.verified == false && request.resource.data.support == false
         && request.resource.data.username is string
-        && exists(/databases/$(database)/documents/usernames/$(request.resource.data.username))
-        && get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
+        && existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
       allow update: if (me() == uid && changed(['displayName', 'bio', 'avatarUrl', 'lastSeen', 'publicKey', 'kid']))
         || (isAdmin() && changed(['verified', 'support']));
       allow delete: if false;
@@ -48,7 +48,15 @@ service cloud.firestore {
         && request.resource.data.uid == me()
         && name == name.lower()
         && (name != 'tomatik_dev' || (request.auth.token.email == adminEmail() && request.auth.token.email_verified == true));
-      allow update, delete: if false;
+      // Taking over a v1 username: only by the account whose e-mail equals the e-mail of the old,
+      // key-less v1 profile that owns the name. Reserved admin name still needs the verified admin e-mail.
+      allow update: if signedIn()
+        && request.resource.data.uid == me()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'email'])
+        && !(('kid' in doc('users/' + resource.data.uid).data) && doc('users/' + resource.data.uid).data.kid != '')
+        && doc('users/' + resource.data.uid).data.email.lower() == request.auth.token.email.lower()
+        && (name != 'tomatik_dev' || (request.auth.token.email == adminEmail() && request.auth.token.email_verified == true));
+      allow delete: if false;
     }
 
     /* -------------------------------------------------------------- chats */

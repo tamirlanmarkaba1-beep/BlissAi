@@ -75,6 +75,42 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
         return users.document(uid).get().await().toUserProfile()
     }
 
+    /**
+     * Attaches a v1 profile (same e-mail, no encryption key yet) to the current account:
+     * the @username is transferred to [uid] and the profile is copied. Returns true when something was claimed.
+     */
+    suspend fun claimLegacy(uid: String, email: String): Boolean {
+        if (email.isBlank()) return false
+        var legacy: com.google.firebase.firestore.DocumentSnapshot? = null
+        for (m in setOf(email, email.lowercase())) {
+            legacy = users.whereEqualTo("email", m).get().await().documents
+                .firstOrNull { it.id != uid && it.getString("kid").isNullOrEmpty() }
+            if (legacy != null) break
+        }
+        val old = legacy ?: return false
+        val name = old.getString("username").orEmpty().lowercase()
+        if (name.isBlank()) return false
+        val nameRef = usernames.document(name)
+        val now = System.currentTimeMillis()
+        db.runTransaction { tx ->
+            val snap = tx.get(nameRef)
+            if (!snap.exists()) tx.set(nameRef, mapOf("uid" to uid, "email" to email))
+            else if (snap.getString("uid") != uid) tx.update(nameRef, mapOf("uid" to uid, "email" to email))
+            tx.set(
+                users.document(uid),
+                mapOf(
+                    "displayName" to old.getString("displayName").orEmpty().ifBlank { name },
+                    "username" to name, "email" to email,
+                    "avatarUrl" to old.getString("avatarUrl").orEmpty(), "bio" to old.getString("bio").orEmpty(),
+                    "verified" to false, "support" to false, "publicKey" to "", "kid" to "",
+                    "lastSeen" to now, "createdAt" to (old.getLong("createdAt") ?: now)
+                )
+            )
+            true
+        }.await()
+        return true
+    }
+
     /** Creates the profile, reserves the @username and publishes this device's public key. */
     suspend fun createProfile(
         uid: String, email: String, displayName: String, username: String, avatar: Uri?

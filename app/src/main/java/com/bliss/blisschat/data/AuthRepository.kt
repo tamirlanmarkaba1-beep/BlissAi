@@ -26,9 +26,48 @@ class AuthRepository {
         val id = identifier.trim().removePrefix("@")
         require(id.isNotEmpty() && password.isNotEmpty()) { "Введите логин и пароль" }
         val email = if (isEmail(id)) id else emailForUsername(id)
-        auth.signInWithEmailAndPassword(email, password).await()
+        try {
+            auth.signInWithEmailAndPassword(email, password).await()
+        } catch (e: Exception) {
+            // Accounts made in v1 have no password: the first login with ANY password sets it.
+            val retryable = e is FirebaseAuthException && e.errorCode !in setOf("ERROR_TOO_MANY_REQUESTS", "ERROR_USER_DISABLED")
+            if (!retryable || !migrateLegacy(email.trim(), password)) throw e
+        }
         Unit
     }.mapAuth()
+
+    /** True if a v1 profile (no encryption key yet) exists for this e-mail. Needs a signed-in user. */
+    private suspend fun legacyExists(email: String): Boolean {
+        val users = FirebaseFirestore.getInstance().collection("users")
+        for (m in setOf(email, email.lowercase())) {
+            val q = users.whereEqualTo("email", m).get().await()
+            if (q.documents.any { it.getString("kid").isNullOrEmpty() }) return true
+        }
+        return false
+    }
+
+    /**
+     * Creates a Firebase account with the typed password; keeps it only when a v1 profile with this e-mail
+     * exists (the profile is then attached to the new account by [ChatRepository.claimLegacy]).
+     */
+    private suspend fun migrateLegacy(email: String, password: String): Boolean {
+        val created = try {
+            auth.createUserWithEmailAndPassword(email, password).await()
+        } catch (e: com.google.firebase.auth.FirebaseAuthWeakPasswordException) {
+            throw IllegalStateException("Для старого аккаунта пароль должен быть не короче 6 символов", e)
+        } catch (e: Exception) {
+            return false // e-mail already has a password account -> the original "wrong password" error stands
+        }
+        val found = runCatching { legacyExists(email) }.getOrDefault(false)
+        if (!found) {
+            runCatching { created.user?.delete()?.await() }
+            auth.signOut()
+        } else {
+            // Needed only for the reserved admin name (rules require a verified e-mail for @tomatik_dev).
+            runCatching { created.user?.sendEmailVerification()?.await() }
+        }
+        return found
+    }
 
     suspend fun register(email: String, password: String): Result<Unit> = runCatching {
         require(isEmail(email)) { "Введите корректный email" }

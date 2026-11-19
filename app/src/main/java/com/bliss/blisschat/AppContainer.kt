@@ -87,6 +87,7 @@ class AppContainer(context: Context) {
                         runCatching { e2ee.ensureKeys(s.user.uid, publishToProfile = local == null || local.kid != s.user.kid) }
                     }
                 } else {
+                    if (s is Session.NeedsProfile) runCatching { repo.claimLegacy(s.uid, s.email) }
                     calls.stopListening()
                     if (s is Session.SignedOut) keyedUid = null
                 }
