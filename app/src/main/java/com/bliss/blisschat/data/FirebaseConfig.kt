@@ -23,7 +23,7 @@ object FirebaseConfig {
     const val APP_ID = "1:794345122154:web:05b6f2241d89652b895d13"
 
     /** OAuth "Web client ID" used to request the Google ID token. Leave empty to hide Google Sign-In errors. */
-    const val WEB_CLIENT_ID = ""
+    const val WEB_CLIENT_ID = "794345122154-jdusvaonf4i9p27nud577g27qq343cnq.apps.googleusercontent.com"
 
     /** STUN/TURN servers for calls. Add your own TURN server here for users behind strict NATs. */
     val ICE_SERVERS: List<Triple<String, String?, String?>> = listOf(
