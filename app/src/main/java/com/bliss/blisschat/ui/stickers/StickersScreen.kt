@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -62,97 +61,258 @@ fun StickersScreen(container: AppContainer, onBack: () -> Unit) {
     val packs by container.stickers.packs.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+
     var creating by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<StickerPack?>(null) }
     var deleting by remember { mutableStateOf<StickerPack?>(null) }
     var removing by remember { mutableStateOf<File?>(null) }
-    var target by remember { mutableStateOf<String?>(null) }
+    var targetPackId by remember { mutableStateOf<String?>(null) }
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(20)) { uris ->
-        val id = target ?: return@rememberLauncherForActivityResult
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(20)
+    ) { uris ->
+        val packId = targetPackId ?: return@rememberLauncherForActivityResult
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
         scope.launch {
             var failed = 0
-            uris.forEach { u -> container.stickers.addFromUri(id, u).onFailure { failed++ } }
-            if (failed > 0) snackbar.showSnackbar("Не удалось добавить: $failed")
+            uris.forEach { uri ->
+                container.stickers.addFromUri(packId, uri).onFailure { failed++ }
+            }
+            if (failed > 0) {
+                snackbar.showSnackbar("Не удалось добавить: $failed")
+            }
         }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             BlissHeader {
-                Row(Modifier.fillMaxWidth().padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад") }
-                    Text("Стикеры", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                    Text(
+                        text = "Стикеры",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 Text(
-                    "Добавляйте картинки в набор (PNG с прозрачным фоном выглядят лучше всего). Нажмите на стикер и удерживайте, чтобы удалить.",
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Добавляйте картинки в набор (PNG с прозрачным фоном выглядят лучше всего). Нажмите на стикер и удерживайте, чтобы удалить.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                BouncyButton("Новый набор", onClick = { creating = true }, icon = Icons.Filled.Add, modifier = Modifier.fillMaxWidth())
+
+                BouncyButton(
+                    text = "Новый набор",
+                    onClick = { creating = true },
+                    icon = Icons.Filled.Add,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 packs.forEach { pack ->
-                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-                        Column(Modifier.padding(16.dp)) {
+                    Surface(
+                        shape = RoundedCornerShape(28.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(pack.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                                IconButton(onClick = { renaming = pack }) { Icon(Icons.Filled.Edit, "Переименовать") }
-                                IconButton(onClick = { deleting = pack }) { Icon(Icons.Filled.Delete, "Удалить набор", tint = MaterialTheme.colorScheme.error) }
-                            }
-                            Spacer(Modifier.size(8.dp))
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                pack.stickers.forEach { f ->
-                                    Box(
-                                        Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                            .combinedClickable(onClick = {}, onLongClick = { removing = f }),
-                                        contentAlignment = Alignment.Center
-                                    ) { StickerImage(f, 68.dp) }
+                                Text(
+                                    text = pack.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = { renaming = pack }) {
+                                    Icon(Icons.Filled.Edit, contentDescription = "Переименовать")
                                 }
+                                IconButton(onClick = { deleting = pack }) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription = "Удалить набор",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.size(8.dp))
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                pack.stickers.forEach { stickerFile ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(76.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                            .combinedClickable(
+                                                onClick = {},
+                                                onLongClick = { removing = stickerFile }
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        StickerImage(stickerFile, 68.dp)
+                                    }
+                                }
+
                                 Box(
-                                    Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer)
+                                    modifier = Modifier
+                                        .size(76.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
                                         .bounceClick {
-                                            target = pack.id
-                                            picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                            targetPackId = pack.id
+                                            picker.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
                                         },
                                     contentAlignment = Alignment.Center
-                                ) { Icon(Icons.Filled.Add, "Добавить стикеры", tint = MaterialTheme.colorScheme.onPrimaryContainer) }
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Add,
+                                        contentDescription = "Добавить стикеры",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(16.dp))
-    }
 
-    if (creating) NameDialog("Новый набор", "", "Создать", { creating = false }) { n ->
-        container.stickers.createPack(n.trim()); creating = false
-    }
-    renaming?.let { p -> NameDialog("Переименовать", p.name, "Сохранить", { renaming = null }) { n -> container.stickers.rename(p.id, n.trim()); renaming = null } }
-    deleting?.let { p ->
-        AlertDialog(
-            onDismissRequest = { deleting = null }, title = { Text("Удалить набор «${p.name}»?") },
-            text = { Text("Все стикеры набора будут удалены с этого устройства.") },
-            confirmButton = { TextButton(onClick = { container.stickers.deletePack(p.id); deleting = null }) { Text("Удалить", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Отмена") } }
+        SnackbarHost(
+            hostState = snackbar,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(16.dp)
         )
     }
-    removing?.let { f ->
+
+    if (creating) {
+        NameDialog(
+            title = "Новый набор",
+            initial = "",
+            confirm = "Создать",
+            onDismiss = { creating = false },
+            onOk = { rawName ->
+                container.stickers.createPack(rawName.trim())
+                creating = false
+            }
+        )
+    }
+
+    renaming?.let { packToRename ->
+        NameDialog(
+            title = "Переименовать",
+            initial = packToRename.name,
+            confirm = "Сохранить",
+            onDismiss = { renaming = null },
+            onOk = { rawName ->
+                container.stickers.rename(packToRename.id, rawName.trim())
+                renaming = null
+            }
+        )
+    }
+
+    deleting?.let { packToDelete ->
         AlertDialog(
-            onDismissRequest = { removing = null }, title = { Text("Удалить стикер?") },
-            confirmButton = { TextButton(onClick = { container.stickers.removeSticker(f); removing = null }) { Text("Удалить", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text("Отмена") } }
+            onDismissRequest = { deleting = null },
+            title = { Text("Удалить набор «${packToDelete.name}»?") },
+            text = { Text("Все стикеры набора будут удалены с этого устройства.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        container.stickers.deletePack(packToDelete.id)
+                        deleting = null
+                    }
+                ) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleting = null }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
+    removing?.let { stickerToRemove ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text("Удалить стикер?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        container.stickers.removeSticker(stickerToRemove)
+                        removing = null
+                    }
+                ) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { removing = null }) {
+                    Text("Отмена")
+                }
+            }
         )
     }
 }
 
 @Composable
-private fun NameDialog(title: String, initial: String, confirm: String, onDismiss: () -> Unit, onOk: (String) -> Unit) {
+private fun NameDialog(
+    title: String,
+    initial: String,
+    confirm: String,
+    onDismiss: () -> Unit,
+    onOk: (String) -> Unit
+) {
     var name by remember { mutableStateOf(initial) }
     AlertDialog(
-        onDismissRequest = onDismiss, title = { Text(title) },
-        text = { PillTextField(name, { name = it.take(30) }, "Название") },
-        confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onOk(name) }) { Text(confirm) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            PillTextField(
+                value = name,
+                onValueChange = { name = it.take(30) },
+                placeholder = "Название"
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = name.isNotBlank(),
+                onClick = { onOk(name) }
+            ) {
+                Text(confirm)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
     )
 }
