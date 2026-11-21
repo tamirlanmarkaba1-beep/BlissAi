@@ -16,6 +16,9 @@ service cloud.firestore {
         && request.auth.token.email == adminEmail()
         && request.auth.token.email_verified == true;
     }
+    function isModerator() {
+      return isAdmin() || (signedIn() && doc('users/' + me()).data.get('moderator', false) == true);
+    }
     function changed(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
 
     /* ------------------------------------------------------------- users */
@@ -23,11 +26,14 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if me() == uid
         && request.resource.data.verified == false && request.resource.data.support == false
+        && request.resource.data.get('moderator', false) == false
+        // usernames ending in _bot belong to bots (flag bot = true), and only to them
+        && (request.resource.data.get('bot', false) == true) == request.resource.data.username.matches('.*_bot')
         && request.resource.data.username is string
         && existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
         && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
-      allow update: if (me() == uid && changed(['displayName', 'bio', 'avatarUrl', 'lastSeen', 'publicKey', 'kid']))
-        || (isAdmin() && changed(['verified', 'support']));
+      allow update: if (me() == uid && changed(['displayName', 'bio', 'avatarUrl', 'lastSeen', 'publicKey', 'kid', 'fcmTokens']))
+        || (isAdmin() && changed(['verified', 'support', 'moderator']));
       allow delete: if false;
 
       // Public-key history (so old messages stay readable after a key change). Never overwritten.
@@ -47,6 +53,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.uid == me()
         && name == name.lower()
+        && (name != 'blisschat_bot' || (request.auth.token.email == adminEmail() && request.auth.token.email_verified == true))
         && (name != 'tomatik_dev' || (request.auth.token.email == adminEmail() && request.auth.token.email_verified == true));
       // Taking over a v1 username: only by the account whose e-mail equals the e-mail of the old,
       // key-less v1 profile that owns the name. Reserved admin name still needs the verified admin e-mail.
@@ -68,13 +75,15 @@ service cloud.firestore {
       allow create: if isMemberAfter()
         && request.resource.data.ownerId == me()
         && request.resource.data.verified == false
-        && (request.resource.data.type == 'GROUP'
+        && (request.resource.data.type == 'GROUP' || request.resource.data.type == 'CHANNEL'
             || (request.resource.data.type == 'DIRECT' && request.resource.data.members.size() == 2));
       allow update: if (isMember() && changed(['lastEnv', 'lastMsgId', 'lastSenderId', 'lastAt', 'readers', 'members'])
           && (!('members' in request.resource.data.diff(resource.data).affectedKeys())
-              || (resource.data.type == 'GROUP'
+              || (resource.data.type in ['GROUP', 'CHANNEL']
                   && (request.resource.data.members.hasAll(resource.data.members)           // add members
                       || request.resource.data.members.toSet() == resource.data.members.toSet().difference([me()].toSet())))))   // leave
+        // tag settings: only the creator
+        || (signedIn() && resource.data.ownerId == me() && changed(['creatorTags', 'selfTags', 'ladder']))
         || (isAdmin() && changed(['verified']));
       allow delete: if signedIn() && ((isMember() && resource.data.ownerId == me()) || isAdmin());
 
@@ -88,16 +97,54 @@ service cloud.firestore {
         allow delete: if signedIn() && (doc('chats/' + chatId).data.ownerId == me() || isAdmin());
       }
 
+      // Activity counters used for group tags (written by each member for themselves).
+      match /stats/{uid} {
+        allow read: if signedIn() && me() in doc('chats/' + chatId).data.members;
+        allow create, update: if signedIn() && me() == uid && me() in doc('chats/' + chatId).data.members
+          && request.resource.data.keys().hasOnly(['minutes', 'messages', 'selfTag', 'ts'])
+          && (!('selfTag' in request.resource.data) || request.resource.data.selfTag.size() <= 16);
+        allow delete: if signedIn() && (doc('chats/' + chatId).data.ownerId == me() || isAdmin());
+      }
+
       match /messages/{msgId} {
         function chat() { return doc('chats/' + chatId).data; }
         allow read: if signedIn() && me() in chat().members;
         allow create: if signedIn() && me() in chat().members
-          && request.resource.data.senderId == me() && request.resource.data.deleted == false;
+          && request.resource.data.senderId == me() && request.resource.data.deleted == false
+          // in a channel only the owner publishes
+          && (chat().type != 'CHANNEL' || chat().ownerId == me());
         allow update: if signedIn() && me() in chat().members
           && (changed(['readBy', 'reactions'])
               || (resource.data.senderId == me() && request.resource.data.deleted == true && changed(['deleted', 'ct', 'a', 'b', 'reactions'])));
         allow delete: if signedIn() && (chat().ownerId == me() || isAdmin());
       }
+    }
+
+    /* -------------------------------------------------------------- media */
+    // Encrypted photos / stickers (ciphertext only). Visible to the members of the chat they belong to.
+    match /media/{id} {
+      allow read: if signedIn() && me() in doc('chats/' + resource.data.chatId).data.members;
+      allow create: if signedIn() && request.resource.data.by == me()
+        && me() in doc('chats/' + request.resource.data.chatId).data.members;
+      allow update: if false;
+      allow delete: if signedIn() && (resource.data.by == me()
+        || doc('chats/' + resource.data.chatId).data.ownerId == me() || isAdmin());
+    }
+
+    /* ------------------------------------------------------------ plugins */
+    // Plugins are data-only .zip files. New ones are "pending" until a moderator (appointed by the admin) approves them.
+    match /plugins/{id} {
+      allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.authorId == me() || isModerator());
+      allow create: if signedIn() && request.resource.data.authorId == me() && request.resource.data.status == 'pending';
+      allow update: if isModerator() && changed(['status', 'reviewedBy', 'note']);
+      allow delete: if signedIn() && (resource.data.authorId == me() || isModerator());
+    }
+    match /pluginFiles/{id} {
+      allow read: if signedIn() && (resource.data.authorId == me() || isModerator()
+        || doc('plugins/' + id).data.status == 'approved');
+      allow create: if signedIn() && request.resource.data.authorId == me();
+      allow update: if false;
+      allow delete: if signedIn() && (resource.data.authorId == me() || isModerator());
     }
 
     /* -------------------------------------------------------------- calls */

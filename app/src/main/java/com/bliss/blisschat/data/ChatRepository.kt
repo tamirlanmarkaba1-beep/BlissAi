@@ -9,11 +9,13 @@ import androidx.exifinterface.media.ExifInterface
 import com.bliss.blisschat.data.crypto.Crypto
 import com.bliss.blisschat.data.crypto.E2EE
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -149,11 +151,12 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
         Unit
     }.mapFailure()
 
-    private suspend fun uploadAvatar(uid: String, uri: Uri): String {
-        val (bytes, _, _) = compressImage(uri, 512, 85)
-        val ref = storage.reference.child("avatars/$uid.jpg")
-        ref.putBytes(bytes).await()
-        return ref.downloadUrl.await().toString() + "&v=" + System.currentTimeMillis()
+    /** Avatars are small (256 px) and stored inline in the profile as a data URI, so no Storage bucket is needed. */
+    private fun uploadAvatar(@Suppress("UNUSED_PARAMETER") uid: String, uri: Uri): String {
+        var quality = 80
+        var out = compressImage(uri, 256, quality).first
+        while (out.size > 60_000 && quality > 40) { quality -= 10; out = compressImage(uri, 256, quality).first }
+        return "data:image/jpeg;base64," + Crypto.b64(out)
     }
 
     suspend fun touchPresence(uid: String) {
@@ -184,7 +187,7 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
     }
 
     fun observeAllGroups(): Flow<List<Chat>> = callbackFlow {
-        val reg = chats.whereEqualTo("type", ChatType.GROUP.name).addSnapshotListener { snap, err ->
+        val reg = chats.whereIn("type", listOf(ChatType.GROUP.name, ChatType.CHANNEL.name)).addSnapshotListener { snap, err ->
             if (err != null) { trySend(emptyList()); return@addSnapshotListener }
             trySend(snap?.documents?.mapNotNull { it.toChat() }.orEmpty())
         }
@@ -213,8 +216,8 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
         id
     }.mapFailure()
 
-    suspend fun createGroup(me: String, name: String, memberUsernames: List<String>): Result<String> = runCatching {
-        require(name.isNotBlank()) { "Введите название группы" }
+    suspend fun createGroup(me: String, name: String, memberUsernames: List<String>, type: ChatType = ChatType.GROUP): Result<String> = runCatching {
+        require(name.isNotBlank()) { "Введите название" }
         val myKey = e2ee.localKey(me) ?: error("Нет ключа шифрования на этом устройстве")
         val members = linkedMapOf<String, String>() // uid -> kid
         members[me] = myKey.kid
@@ -230,7 +233,8 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
         batch.set(
             ref,
             mapOf(
-                "type" to ChatType.GROUP.name, "name" to name.trim(), "ownerId" to me,
+                "type" to type.name, "name" to name.trim(), "ownerId" to me,
+                "creatorTags" to true, "selfTags" to true, "ladder" to listOf(mapOf("n" to "Новичок", "m" to 0), mapOf("n" to "Активный", "m" to 120), mapOf("n" to "Старожил", "m" to 600)),
                 "members" to members.keys.toList(), "verified" to false,
                 "lastMsgId" to "", "lastSenderId" to "", "lastAt" to now, "readers" to emptyList<String>(),
                 "createdAt" to now
@@ -264,7 +268,7 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
 
     /** Deletes a group with all of its messages and keys (owner or Super Admin). */
     suspend fun deleteChat(chatId: String): Result<Unit> = runCatching {
-        for (sub in listOf("messages", "keys")) {
+        for (sub in listOf("messages", "keys", "stats")) {
             val col = chats.document(chatId).collection(sub)
             while (true) {
                 val page = col.limit(400).get().await()
@@ -272,6 +276,13 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
                 val batch = db.batch()
                 page.documents.forEach { batch.delete(it.reference) }
                 batch.commit().await()
+            }
+        }
+        runCatching {
+            while (true) {
+                val page = db.collection("media").whereEqualTo("chatId", chatId).limit(100).get().await()
+                if (page.isEmpty) break
+                val batch = db.batch(); page.documents.forEach { batch.delete(it.reference) }; batch.commit().await()
             }
         }
         chats.document(chatId).delete().await()
@@ -313,15 +324,40 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
 
     /** Encrypts the picture with a fresh key, uploads only the ciphertext, then sends the key inside the message. */
     suspend fun sendImage(chat: Chat, me: String, uri: Uri): Result<Unit> = runCatching {
-        val (jpeg, w, h) = compressImage(uri, 1600, 82)
+        var (jpeg, w, h) = compressImage(uri, 1280, 80)
+        var side = 1280
+        while (jpeg.size > 600_000 && side > 480) { side = (side * 0.75).toInt(); val r = compressImage(uri, side, 70); jpeg = r.first; w = r.second; h = r.third }
         val (cipher, key) = e2ee.encryptMedia(jpeg)
-        val path = "media/${chat.id}/${UUID.randomUUID()}"
-        storage.reference.child(path).putBytes(cipher).await()
+        val path = storeMedia(chat.id, me, cipher)
         send(chat, me, Content(Content.KIND_IMAGE, path = path, key = key, w = w, h = h)).getOrThrow()
     }.mapFailure()
 
+    /** A sticker is an encrypted PNG/WebP sent like a photo, but drawn without a bubble. */
+    suspend fun sendSticker(chat: Chat, me: String, bytes: ByteArray, w: Int, h: Int): Result<Unit> = runCatching {
+        val (cipher, key) = e2ee.encryptMedia(bytes)
+        val path = storeMedia(chat.id, me, cipher)
+        send(chat, me, Content(Content.KIND_STICKER, path = path, key = key, w = w, h = h)).getOrThrow()
+    }.mapFailure()
+
+    /**
+     * Encrypted files live in Firestore (collection media/{id}, one document <= ~1 MB) so the app works on the free
+     * Spark plan, where Firebase Storage is no longer available for new projects. The path "m:{id}" marks this scheme.
+     */
+    private suspend fun storeMedia(chatId: String, me: String, cipher: ByteArray): String {
+        require(cipher.size < 900_000) { "Файл слишком большой" }
+        val id = UUID.randomUUID().toString()
+        db.collection("media").document(id)
+            .set(mapOf("chatId" to chatId, "by" to me, "ts" to System.currentTimeMillis(), "ct" to Blob.fromBytes(cipher))).await()
+        return "m:$id"
+    }
+
     suspend fun downloadMedia(path: String, key: String): ByteArray {
-        val cipher = storage.reference.child(path).getBytes(16L * 1024 * 1024).await()
+        val cipher = if (path.startsWith("m:")) {
+            db.collection("media").document(path.removePrefix("m:")).get().await().getBlob("ct")?.toBytes()
+                ?: error("Файл не найден")
+        } else {
+            storage.reference.child(path).getBytes(16L * 1024 * 1024).await() // photos sent by older versions
+        }
         return e2ee.decryptMedia(cipher, key)
     }
 
@@ -354,9 +390,53 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
         )
         if (chat.lastMsgId == message.id) batch.update(chats.document(chat.id), "lastEnv", FieldValue.delete())
         batch.commit().await()
-        if (!mediaPath.isNullOrEmpty()) runCatching { storage.reference.child(mediaPath).delete().await() }
+        if (!mediaPath.isNullOrEmpty()) runCatching {
+            if (mediaPath.startsWith("m:")) db.collection("media").document(mediaPath.removePrefix("m:")).delete().await()
+            else storage.reference.child(mediaPath).delete().await()
+        }
         Unit
     }.mapFailure()
+
+    /* ------------------------------------------------------------- group tags */
+
+    fun observeStats(chatId: String): Flow<Map<String, MemberStat>> = callbackFlow {
+        val reg = chats.document(chatId).collection("stats").addSnapshotListener { snap, err ->
+            if (err != null) { trySend(emptyMap()); return@addSnapshotListener }
+            trySend(snap?.documents?.associate {
+                it.id to MemberStat(it.id, it.getLong("minutes") ?: 0L, it.getLong("messages") ?: 0L, it.getString("selfTag").orEmpty())
+            }.orEmpty())
+        }
+        awaitClose { reg.remove() }
+    }
+
+    /** Adds time spent / messages written to my activity counters in this group. */
+    suspend fun touchStats(chatId: String, me: String, minutes: Long, messages: Long) {
+        runCatching {
+            chats.document(chatId).collection("stats").document(me).set(
+                mapOf("minutes" to FieldValue.increment(minutes), "messages" to FieldValue.increment(messages), "ts" to System.currentTimeMillis()),
+                SetOptions.merge()
+            ).await()
+        }
+    }
+
+    suspend fun setSelfTag(chatId: String, me: String, tag: String): Result<Unit> = runCatching {
+        chats.document(chatId).collection("stats").document(me)
+            .set(mapOf("selfTag" to tag.trim().take(16)), SetOptions.merge()).await()
+        Unit
+    }.mapFailure()
+
+    suspend fun updateTagSettings(chatId: String, creatorTags: Boolean, selfTags: Boolean, ladder: List<TagStep>): Result<Unit> = runCatching {
+        chats.document(chatId).update(
+            mapOf("creatorTags" to creatorTags, "selfTags" to selfTags, "ladder" to ladder.map { mapOf("n" to it.name.trim().take(16), "m" to it.minutes) })
+        ).await()
+        Unit
+    }.mapFailure()
+
+    /* ------------------------------------------------------------ push tokens */
+
+    suspend fun saveFcmToken(uid: String, token: String) {
+        runCatching { users.document(uid).update("fcmTokens", FieldValue.arrayUnion(token)).await() }
+    }
 
     /* ------------------------------------------------------------------ admin */
 
@@ -368,6 +448,10 @@ class ChatRepository(private val context: Context, val e2ee: E2EE) {
 
     suspend fun setSupport(actor: UserProfile, targetUid: String, value: Boolean): Result<Unit> = runCatching {
         requireAdmin(actor); users.document(targetUid).update("support", value).await(); Unit
+    }.mapFailure()
+
+    suspend fun setModerator(actor: UserProfile, targetUid: String, value: Boolean): Result<Unit> = runCatching {
+        requireAdmin(actor); users.document(targetUid).update("moderator", value).await(); Unit
     }.mapFailure()
 
     suspend fun setGroupVerified(actor: UserProfile, chatId: String, value: Boolean): Result<Unit> = runCatching {

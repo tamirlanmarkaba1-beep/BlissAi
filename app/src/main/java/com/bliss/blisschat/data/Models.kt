@@ -6,7 +6,10 @@ import org.json.JSONObject
 /** The one account that automatically receives Super Admin privileges (case-insensitive). */
 const val ADMIN_USERNAME = "tomatik_dev"
 
-enum class ChatType { DIRECT, GROUP }
+enum class ChatType { DIRECT, GROUP, CHANNEL }
+
+/** Username of the built-in system bot (all bot usernames end with "_bot"). */
+const val SYSTEM_BOT_USERNAME = "blisschat_bot"
 
 data class UserProfile(
     val uid: String = "",
@@ -20,11 +23,27 @@ data class UserProfile(
     val publicKey: String = "",
     val kid: String = "",
     val lastSeen: Long = 0L,
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val bot: Boolean = false,
+    val moderator: Boolean = false
 ) {
+    val isBot: Boolean get() = bot || username.endsWith("_bot", ignoreCase = true)
     val isAdmin: Boolean get() = username.equals(ADMIN_USERNAME, ignoreCase = true)
     val title: String get() = displayName.ifBlank { username }
     fun online(now: Long = System.currentTimeMillis()) = now - lastSeen < 75_000L
+}
+
+/** One rung of the creator's tag ladder: [name] is granted after [minutes] spent in the group. */
+data class TagStep(val name: String, val minutes: Int)
+
+/** Per-member activity in a group (chats/{id}/stats/{uid}). */
+data class MemberStat(val uid: String = "", val minutes: Long = 0L, val messages: Long = 0L, val selfTag: String = "")
+
+/** Rank earned from the ladder: the highest step whose threshold has been reached (activity = minutes + 2 per message). */
+fun Chat.rankFor(stat: MemberStat?): String? {
+    if (!creatorTags || stat == null) return null
+    val score = stat.minutes + stat.messages * 2
+    return ladder.filter { score >= it.minutes }.maxByOrNull { it.minutes }?.name
 }
 
 /** What is stored on the server for every message: only ciphertext + key ids. */
@@ -42,8 +61,13 @@ data class Chat(
     val lastSenderId: String = "",
     val lastAt: Long = 0L,
     val readers: List<String> = emptyList(),
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    /** Group tags: ranks granted by the creator's ladder (by time spent in the group) and tags members set themselves. */
+    val creatorTags: Boolean = true,
+    val selfTags: Boolean = true,
+    val ladder: List<TagStep> = emptyList()
 ) {
+    val isBroadcast: Boolean get() = type == ChatType.CHANNEL
     fun peerOf(me: String): String? = if (type == ChatType.DIRECT) members.firstOrNull { it != me } else null
     fun unreadFor(me: String) = lastMsgId.isNotEmpty() && lastSenderId != me && me !in readers
 }
@@ -71,11 +95,12 @@ data class Content(
     fun toJson(): String = JSONObject()
         .put("k", kind).put("t", text).put("p", path).put("e", key).put("w", w).put("h", h).toString()
 
-    val preview: String get() = if (kind == KIND_IMAGE) "📷 Фото" else text
+    val preview: String get() = when (kind) { KIND_IMAGE -> "📷 Фото"; KIND_STICKER -> "🙂 Стикер"; else -> text }
 
     companion object {
         const val KIND_TEXT = "text"
         const val KIND_IMAGE = "image"
+    const val KIND_STICKER = "sticker"
         fun fromJson(s: String): Content {
             val o = JSONObject(s)
             return Content(
@@ -117,7 +142,9 @@ fun DocumentSnapshot.toUserProfile(): UserProfile? {
         publicKey = getString("publicKey").orEmpty(),
         kid = getString("kid").orEmpty(),
         lastSeen = getLong("lastSeen") ?: 0L,
-        createdAt = getLong("createdAt") ?: 0L
+        createdAt = getLong("createdAt") ?: 0L,
+        bot = getBoolean("bot") ?: false,
+        moderator = getBoolean("moderator") ?: false
     )
 }
 
@@ -143,7 +170,13 @@ fun DocumentSnapshot.toChat(): Chat? {
         lastSenderId = getString("lastSenderId").orEmpty(),
         lastAt = getLong("lastAt") ?: 0L,
         readers = (get("readers") as? List<String>).orEmpty(),
-        createdAt = getLong("createdAt") ?: 0L
+        createdAt = getLong("createdAt") ?: 0L,
+        creatorTags = getBoolean("creatorTags") ?: true,
+        selfTags = getBoolean("selfTags") ?: true,
+        ladder = ((get("ladder") as? List<Map<String, Any?>>).orEmpty()).mapNotNull {
+            val n = it["n"] as? String ?: return@mapNotNull null
+            TagStep(n, (it["m"] as? Number)?.toInt() ?: 0)
+        }
     )
 }
 

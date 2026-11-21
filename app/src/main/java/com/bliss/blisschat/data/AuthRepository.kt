@@ -2,20 +2,22 @@ package com.bliss.blisschat.data
 
 import android.content.Context
 import android.util.Patterns
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import android.content.Intent
+import android.net.Uri
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 
 /** E-mail / username + password and Google sign-in on top of Firebase Auth. */
 class AuthRepository {
+
+    companion object {
+        const val AUTH_WEB_URL = "https://tamirlanmarkaba1-beep.github.io/BlissAnimate/"
+    }
 
     private val auth get() = FirebaseAuth.getInstance()
 
@@ -76,21 +78,33 @@ class AuthRepository {
         Unit
     }.mapAuth()
 
+    /** Error from the last web Google sign-in (deep link); shown by the login screen, then cleared. */
+    val webError = MutableStateFlow<String?>(null)
+
+    /** Google sign-in goes through the web page: it opens in the browser and comes back via blisschat://auth?idToken=... */
     suspend fun google(activityContext: Context): Result<Unit> = runCatching {
-        require(FirebaseConfig.WEB_CLIENT_ID.isNotBlank()) {
-            "Вход через Google не настроен: укажите WEB_CLIENT_ID в FirebaseConfig.kt"
-        }
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(GetSignInWithGoogleOption.Builder(FirebaseConfig.WEB_CLIENT_ID).build())
-            .build()
-        val cred = CredentialManager.create(activityContext).getCredential(activityContext, request).credential
-        check(cred is CustomCredential && cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-            "Не удалось получить аккаунт Google"
-        }
-        val token = GoogleIdTokenCredential.createFrom(cred.data).idToken
-        auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
+        webError.value = null
+        activityContext.startActivity(
+            Intent(Intent.ACTION_VIEW, Uri.parse(AUTH_WEB_URL)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }.fold(
+        onSuccess = { Result.success(Unit) },
+        onFailure = { Result.failure(IllegalStateException("Не удалось открыть браузер для входа через Google", it)) }
+    )
+
+    /** Token from blisschat://auth?idToken=... (also accepts the token in the #fragment). */
+    fun extractIdToken(uri: Uri?): String? {
+        if (uri == null || uri.scheme != "blisschat" || uri.host != "auth") return null
+        val keys = listOf("idToken", "id_token")
+        for (k in keys) uri.getQueryParameter(k)?.takeIf { it.isNotBlank() }?.let { return it }
+        val frag = uri.fragment ?: return null
+        return Uri.parse("blisschat://auth?$frag").let { f -> keys.firstNotNullOfOrNull { f.getQueryParameter(it)?.takeIf { v -> v.isNotBlank() } } }
+    }
+
+    suspend fun signInWithWebIdToken(idToken: String): Result<Unit> = runCatching {
+        auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await()
         Unit
-    }.mapAuth()
+    }.mapAuth().onFailure { e -> webError.update { e.message } }
 
     suspend fun resetPassword(identifier: String): Result<Unit> = runCatching {
         val id = identifier.trim().removePrefix("@")
@@ -113,7 +127,6 @@ class AuthRepository {
         onSuccess = { Result.success(it) },
         onFailure = { e ->
             val msg = when {
-                e is GetCredentialCancellationException -> "Вход отменён"
                 e is FirebaseAuthException -> when (e.errorCode) {
                     "ERROR_INVALID_CREDENTIAL", "ERROR_WRONG_PASSWORD", "ERROR_USER_NOT_FOUND",
                     "ERROR_INVALID_LOGIN_CREDENTIALS" -> "Неверный логин или пароль"

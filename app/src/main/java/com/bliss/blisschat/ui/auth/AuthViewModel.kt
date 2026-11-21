@@ -36,6 +36,14 @@ class AuthViewModel(private val c: AppContainer) : ViewModel() {
     private val _ui = MutableStateFlow(UiState())
     val ui: StateFlow<UiState> = _ui.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            c.auth.webError.collect { msg ->
+                if (msg != null) { _ui.update { it.copy(error = msg, googleLoading = false) }; c.auth.webError.value = null }
+            }
+        }
+    }
+
     fun setMode(m: Mode) = _ui.update { it.copy(mode = m, error = null, info = null, password = "", confirm = "") }
     fun onIdentifier(v: String) = _ui.update { it.copy(identifier = v, error = null) }
     fun onPassword(v: String) = _ui.update { it.copy(password = v, error = null) }

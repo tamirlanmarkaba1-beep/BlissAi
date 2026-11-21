@@ -4,10 +4,19 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.bliss.blisschat.data.AuthRepository
+import com.bliss.blisschat.data.BotRepository
+import com.bliss.blisschat.data.bot.SystemBot
+import com.bliss.blisschat.data.stickers.StickerStore
+import com.bliss.blisschat.ui.create.CreateViewModel
 import com.bliss.blisschat.data.ChatRepository
 import com.bliss.blisschat.data.SettingsStore
 import com.bliss.blisschat.data.UserProfile
 import com.bliss.blisschat.data.call.CallManager
+import com.bliss.blisschat.data.call.CallPhase
+import com.bliss.blisschat.data.push.Notifications
+import com.bliss.blisschat.data.update.UpdateManager
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.bliss.blisschat.data.crypto.E2EE
 import com.bliss.blisschat.data.crypto.LocalKeys
 import com.bliss.blisschat.ui.admin.AdminViewModel
@@ -54,6 +63,16 @@ class AppContainer(context: Context) {
     val repo = ChatRepository(context.applicationContext, e2ee)
     val auth = AuthRepository()
     val calls = CallManager(context.applicationContext, e2ee)
+    val updates = UpdateManager(context.applicationContext)
+    val bots = BotRepository(context.applicationContext)
+    val systemBot = SystemBot(context.applicationContext)
+    val stickers = StickerStore(context.applicationContext)
+    private val appContext = context.applicationContext
+    val plugins = com.bliss.blisschat.data.plugins.PluginRepository(context.applicationContext, stickers, settings)
+
+    /** Set by a tapped notification: chat to open / answer the call as soon as it rings in the app. */
+    val pendingChat = MutableStateFlow<String?>(null)
+    @Volatile var acceptWhenRinging = false
 
     private val authUser: Flow<Pair<String, String>?> = callbackFlow {
         val fa = FirebaseAuth.getInstance()
@@ -76,10 +95,24 @@ class AppContainer(context: Context) {
 
     init {
         appScope.launch {
+            calls.ui.collect { ui ->
+                when (ui.phase) {
+                    CallPhase.INCOMING -> if (acceptWhenRinging && calls.hasPermissions(ui.video)) { acceptWhenRinging = false; calls.accept() }
+                    CallPhase.CONNECTING, CallPhase.ACTIVE -> { acceptWhenRinging = false; Notifications.cancelCall(appContext) }
+                    CallPhase.IDLE -> { acceptWhenRinging = false; Notifications.cancelCall(appContext) }
+                    CallPhase.OUTGOING -> Unit
+                }
+            }
+        }
+        appScope.launch {
             var keyedUid: String? = null
             session.collect { s ->
                 if (s is Session.Ready) {
                     calls.listen(s.user.uid)
+                    systemBot.onSignedIn(s.user.uid, s.user.title, FirebaseAuth.getInstance().currentUser?.metadata?.lastSignInTimestamp ?: 0L)
+                    runCatching {
+                        FirebaseMessaging.getInstance().token.addOnSuccessListener { t -> appScope.launch { repo.saveFcmToken(s.user.uid, t) } }
+                    }
                     if (keyedUid != s.user.uid) {
                         keyedUid = s.user.uid
                         // First start on this device creates the key pair; the public half is published.
@@ -105,6 +138,8 @@ class AppContainer(context: Context) {
             ProfileViewModel::class.java -> ProfileViewModel(this@AppContainer, requireNotNull(arg))
             SettingsViewModel::class.java -> SettingsViewModel(this@AppContainer)
             AdminViewModel::class.java -> AdminViewModel(this@AppContainer)
+            CreateViewModel::class.java -> CreateViewModel(this@AppContainer)
+            com.bliss.blisschat.ui.plugins.PluginsViewModel::class.java -> com.bliss.blisschat.ui.plugins.PluginsViewModel(this@AppContainer)
             else -> error("Unknown ViewModel ${modelClass.name}")
         } as T
     }

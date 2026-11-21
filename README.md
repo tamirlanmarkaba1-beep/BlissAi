@@ -1,37 +1,60 @@
-# blisschat v2 (Android · Kotlin · Jetpack Compose · Material 3)
+# blisschat 2.1 (Android · Kotlin · Compose · Material 3)
 
-End-to-end encrypted messenger: text, photos and P2P audio/video calls. Organic "blob" UI, a rainbow accent colour, email/username + Google login.
+Мессенджер со сквозным шифрованием: личные чаты, группы, каналы, боты, фото, стикеры, звонки, плагины.
 
-## Build the APK
-**Cloud (no PC needed):** push the project to GitHub → *Actions → Build APK* → download `blisschat-apk` (`.github/workflows/build.yml`, Gradle 8.9 + JDK 17).
-**Android Studio (Ladybug+):** open the folder → sync → *Build > Build APK(s)* → `app/build/outputs/apk/debug/app-debug.apk`.
-Needs Gradle ≥ 8.9 and JDK 17 (old system Gradle in Termux will fail).
-Nunito is downloaded at build time (falls back to the system font).
+## Сборка
+GitHub Actions (`.github/workflows/build.yml`) собирает **release-APK** подписанным вашим ключом
+(секреты репозитория `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) → артефакт `blisschat-release-apk`.
+Подпись должна быть всегда одной и той же, иначе обновление «поверх» не установится.
 
-## Firebase setup (project `bitrate-71684`)
-Firebase is initialised from code (`data/FirebaseConfig.kt`); no `google-services.json` is needed.
-1. **Authentication → Sign-in method:** enable **Email/Password** and **Google**.
-2. **Firestore** and **Storage:** create, then deploy `firestore.rules` and `storage.rules` (set `adminEmail()` in `firestore.rules` to the e-mail that owns `@tomatik_dev`).
-3. **Google Sign-In:** add an Android app (package `com.bliss.blisschat`) in project settings with the SHA-1 of `app/blisschat.keystore`
-   (`keytool -list -v -keystore app/blisschat.keystore -alias blisschat -storepass blisschat`), then copy the **Web client ID** (Authentication → Google → Web SDK configuration) into `FirebaseConfig.WEB_CLIENT_ID`. Without it the Google button shows an explanatory message; e-mail login works regardless.
-4. **Calls across mobile networks / strict NAT** need a TURN server: add it to `FirebaseConfig.ICE_SERVERS`. Only Google STUN is configured.
+## Вход
+Сверху — email/username и пароль, снизу — кнопка «Войти через Google».
+Google-вход идёт через вашу веб-страницу `https://tamirlanmarkaba1-beep.github.io/BlissAnimate/`: приложение открывает её в браузере,
+страница возвращает токен ссылкой `blisschat://auth?idToken=...` (допустим и `#idToken=` / `id_token`), приложение входит в Firebase.
+Адрес страницы: `AuthRepository.AUTH_WEB_URL`. Токен должен быть Google ID token для Web client ID проекта.
 
-## How the encryption works
-- Each device creates an ECDH P-256 key pair; the private key is wrapped by an Android Keystore key. Public keys are published (`users/{uid}/keys/{kid}`, kid = hash of the key, so the server cannot swap it).
-- DM: AES-256-GCM key from ECDH + HKDF. Groups: a random group key wrapped for every member. Photos: random per-file AES key, only ciphertext goes to Storage; the key travels inside the encrypted message.
-- Calls: WebRTC (DTLS-SRTP) media; SDP and ICE are encrypted with the chat key, so Firestore cannot tamper with fingerprints.
+## Автообновление
+При запуске главного экрана приложение (в фоне) скачивает
+`https://raw.githubusercontent.com/tamirlanmarkaba1-beep/Blisschat/main/version.json?t=…`, сравнивает `versionCode`
+и показывает диалог «Обновить / Позже». Скачивание — системный DownloadManager, установка — через FileProvider.
+Руками: **Настройки → Центр обновлений** (внизу).
 
-## Features
-Chats/groups with ✓/✓✓ checkmarks, long-press menus (own: delete for everyone / for me; others: delete for me + emoji reactions), call buttons in the header and in-call controls (mute, speaker, camera, flip, end), verified and "blisschat Support" badges, Admin panel (Settings, only for `tomatik_dev`), rainbow colour slider (Settings) controlling accent colours and background glow.
+Как выпустить версию:
+1. Поднимите `versionCode` / `versionName` в `app/build.gradle.kts`, соберите APK.
+2. Загрузите APK в релиз (имя файла должно совпадать с `apkUrl` в `version.json`).
+3. Закоммитьте `version.json` в ветку `main` репозитория `Blisschat` (versionCode больше, чем у установленного).
 
-## Known limitations
-- **Not compiled in the authoring sandbox** — fix any import/version nits Gradle reports (dependency versions to double-check: `stream-webrtc-android:1.1.1`, `googleid:1.1.1`, `credentials:1.3.0`).
-- New device/reinstall = new key: old history on that device is unreadable.
-- No push: incoming calls only ring while the app is open.
-- Group members are not cryptographically signed (a member could impersonate another member in the group).
-- Reactions, read receipts, profile data and avatars are not encrypted. Only photos are supported as media.
-- `usernames/{name}` is publicly `get`-able (needed for login by username) and exposes the e-mail.
+## Firebase
+1. Authentication: включить Email/Password и Google. Firestore: создать, выложить `firestore.rules` (в `adminEmail()` — email владельца `@tomatik_dev`).
+2. Firebase хранится в Firestore (Storage не нужен): фото, стикеры и аватарки — в Firestore (до ~900 КБ), фото шифруются.
+3. **Push-уведомления и звонки при закрытом приложении:** `firebase deploy --only functions` (папка `functions/`, нужен тариф Blaze).
+   Приложение Android уже зарегистрировано (`app/google-services.json`).
+4. Звонки через мобильные сети лучше работают с TURN-сервером: `FirebaseConfig.ICE_SERVERS`.
 
-## Accounts from v1
-A v1 profile (no encryption key yet) is migrated automatically: log in with the **e-mail** and **any password (min. 6 chars)** – the password is saved, the old profile and @username are attached to the new account (chat history from v1 is not carried over). Works only once per account; afterwards the password is required. The v1 login e-mails were never verified, so anyone who knows such an e-mail could claim it first – deploy `firestore.rules` and log in once yourself soon after updating.
-**@tomatik_dev:** the rules require a verified e-mail equal to `adminEmail()`. The app e-mails a verification link on migration: open it, then sign out/in (or restart) and the admin profile is attached.
+## Что есть
+- **«+» → окно на весь экран:** личный чат, канал, группа, бот.
+- **Каналы:** пишет только владелец; подписчики читают, реакции, тихий режим.
+- **Боты (Python):** создаются в приложении, username всегда оканчивается на `_bot`; в `bots/` — SDK `blisschat_bot.py`
+  и пример. Бот говорит на том же шифрованном протоколе, поэтому запускается на любом хостинге (VPS, Render, Railway, Fly.io…):
+  `pip install -r bots/requirements.txt && BLISS_BOT_TOKEN="имя_bot:токен" python bots/example_bot.py`.
+  Системный бот `blisschat_bot` приветствует при входе и пишет точное время входа по Москве.
+- **Push:** звонок на заблокированном экране — на весь экран; при разблокированном — уведомление сверху с «Принять / Отклонить».
+  Настройки → Уведомления: сообщения, звонки, полноэкранные звонки, список чатов и людей с отключёнными уведомлениями
+  (также «Выключить уведомления» в меню чата).
+- **Теги в группах:** создатель задаёт ступени (название + очки: 1 минута в группе = 1, сообщение = 2); тег растёт со временем и общением.
+  Участники могут писать собственный тег. Создатель включает/выключает оба вида (инфо о группе).
+- **Плагины** (Настройки → Плагины): zip с `manifest.json` (тема или набор стикеров, без кода) → заявка → модератор скачивает zip,
+  проверяет, одобряет → плагин в каталоге. Модераторов назначает админ (Админ-панель → найти @username → «Модератор плагинов»).
+- **Стикеры:** свои наборы (Настройки → Стикеры), панель стикеров в чате.
+- **Меню сообщения:** долгое нажатие — фон размывается, под сообщением появляются реакции и действия.
+- Настройки: тема, цвет (радуга), размер текста, автозагрузка фото, скрыть «в сети», кэш, центр обновлений. Отпечаток ключа из настроек убран.
+
+## Шифрование (кратко)
+ECDH P-256 + HKDF-SHA256 + AES-256-GCM; группы — общий ключ, обёрнутый для каждого участника; фото — случайный ключ в зашифрованном сообщении.
+
+## Ограничения
+- Код не компилировался в среде автора — при ошибках сборки пришлите строки с `e:`.
+- Системный бот хранит сообщения локально; время берётся с часов телефона (переводится в МСК).
+- Счётчики активности для тегов пишутся клиентом (участник теоретически может их подделать).
+- Push содержит только факт сообщения/звонка, без текста (шифрование). У каналов подписчиков добавляет владелец.
+- Новый телефон/переустановка = новый ключ: старая переписка на нём не прочитается.

@@ -40,6 +40,7 @@ class AdminViewModel(private val c: AppContainer) : ViewModel() {
 
     fun setVerified(v: Boolean) = act { u, a -> c.repo.setVerified(a, u.uid, v) }
     fun setSupport(v: Boolean) = act { u, a -> c.repo.setSupport(a, u.uid, v) }
+    fun setModerator(v: Boolean) = act { u, a -> c.repo.setModerator(a, u.uid, v) }
 
     private fun act(block: suspend (UserProfile, UserProfile) -> Result<Unit>) {
         val actor = me.value ?: return

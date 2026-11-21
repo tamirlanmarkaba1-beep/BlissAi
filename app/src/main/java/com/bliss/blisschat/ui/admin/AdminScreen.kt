@@ -77,6 +77,7 @@ fun AdminScreen(container: AppContainer, onBack: () -> Unit) {
                         Spacer(Modifier.height(8.dp))
                         ToggleRow("Верифицирован", u.verified) { vm.setVerified(it) }
                         ToggleRow("blisschat Support", u.support) { vm.setSupport(it) }
+                        ToggleRow("Модератор плагинов", u.moderator) { vm.setModerator(it) }
                     }
                     status?.let { Text(it, Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall) }
                 }

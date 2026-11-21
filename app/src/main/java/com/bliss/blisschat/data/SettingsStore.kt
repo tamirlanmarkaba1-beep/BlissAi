@@ -20,7 +20,17 @@ data class AppSettings(
     val hue: Float = DEFAULT_HUE,
     val rememberMe: Boolean = true,
     /** "chatId/messageId" pairs the user deleted only on this device. */
-    val hidden: Set<String> = emptySet()
+    val hidden: Set<String> = emptySet(),
+    /** Notifications */
+    val notifMessages: Boolean = true,
+    val notifCalls: Boolean = true,
+    val notifFullScreenCalls: Boolean = true,
+    /** Chats ("c:{chatId}") and people ("u:{uid}") that never notify. */
+    val muted: Set<String> = emptySet(),
+    /** Look & behaviour */
+    val textScale: Float = 1f,
+    val autoLoadPhotos: Boolean = true,
+    val hideOnline: Boolean = false
 )
 
 class SettingsStore(private val context: Context) {
@@ -30,6 +40,13 @@ class SettingsStore(private val context: Context) {
         val HUE = floatPreferencesKey("hue")
         val REMEMBER = booleanPreferencesKey("remember_me")
         val HIDDEN = stringSetPreferencesKey("hidden_messages")
+        val N_MSG = booleanPreferencesKey("notif_messages")
+        val N_CALL = booleanPreferencesKey("notif_calls")
+        val N_FULL = booleanPreferencesKey("notif_fullscreen")
+        val MUTED = stringSetPreferencesKey("muted")
+        val TEXT_SCALE = floatPreferencesKey("text_scale")
+        val AUTO_PHOTOS = booleanPreferencesKey("auto_photos")
+        val HIDE_ONLINE = booleanPreferencesKey("hide_online")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p: Preferences ->
@@ -37,7 +54,14 @@ class SettingsStore(private val context: Context) {
             dark = p[Keys.DARK] ?: true,
             hue = p[Keys.HUE] ?: DEFAULT_HUE,
             rememberMe = p[Keys.REMEMBER] ?: true,
-            hidden = p[Keys.HIDDEN] ?: emptySet()
+            hidden = p[Keys.HIDDEN] ?: emptySet(),
+            notifMessages = p[Keys.N_MSG] ?: true,
+            notifCalls = p[Keys.N_CALL] ?: true,
+            notifFullScreenCalls = p[Keys.N_FULL] ?: true,
+            muted = p[Keys.MUTED] ?: emptySet(),
+            textScale = p[Keys.TEXT_SCALE] ?: 1f,
+            autoLoadPhotos = p[Keys.AUTO_PHOTOS] ?: true,
+            hideOnline = p[Keys.HIDE_ONLINE] ?: false
         )
     }
 
@@ -46,4 +70,16 @@ class SettingsStore(private val context: Context) {
     suspend fun setRememberMe(value: Boolean) = context.dataStore.edit { it[Keys.REMEMBER] = value }
     suspend fun hide(chatId: String, messageId: String) =
         context.dataStore.edit { it[Keys.HIDDEN] = (it[Keys.HIDDEN] ?: emptySet()) + "$chatId/$messageId" }
+
+    suspend fun setNotifMessages(v: Boolean) = context.dataStore.edit { it[Keys.N_MSG] = v }
+    suspend fun setNotifCalls(v: Boolean) = context.dataStore.edit { it[Keys.N_CALL] = v }
+    suspend fun setNotifFullScreen(v: Boolean) = context.dataStore.edit { it[Keys.N_FULL] = v }
+    suspend fun setTextScale(v: Float) = context.dataStore.edit { it[Keys.TEXT_SCALE] = v.coerceIn(0.8f, 1.4f) }
+    suspend fun setAutoLoadPhotos(v: Boolean) = context.dataStore.edit { it[Keys.AUTO_PHOTOS] = v }
+    suspend fun setHideOnline(v: Boolean) = context.dataStore.edit { it[Keys.HIDE_ONLINE] = v }
+    /** @param key "c:{chatId}" or "u:{uid}" */
+    suspend fun setMuted(key: String, muted: Boolean) = context.dataStore.edit {
+        val cur = it[Keys.MUTED] ?: emptySet()
+        it[Keys.MUTED] = if (muted) cur + key else cur - key
+    }
 }

@@ -5,13 +5,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bliss.blisschat.AppContainer
 import com.bliss.blisschat.Session
+import com.bliss.blisschat.data.AppSettings
 import com.bliss.blisschat.data.Chat
+import com.bliss.blisschat.data.MemberStat
+import com.bliss.blisschat.data.TagStep
 import com.bliss.blisschat.data.ChatType
 import com.bliss.blisschat.data.Content
 import com.bliss.blisschat.data.Message
 import com.bliss.blisschat.data.UiMessage
 import com.bliss.blisschat.data.UserProfile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -35,13 +42,18 @@ data class ChatUiState(
     val messages: List<UiMessage> = emptyList(),
     val messagesLoaded: Boolean = false,
     val users: Map<String, UserProfile> = emptyMap(),
-    val me: UserProfile? = null
+    val me: UserProfile? = null,
+    val stats: Map<String, MemberStat> = emptyMap()
 ) {
     val myId get() = me?.uid.orEmpty()
     val isMember get() = chat?.members?.contains(myId) == true
     val isAdmin get() = me?.isAdmin == true
     val isOwner get() = chat != null && chat.ownerId == myId
-    val isGroup get() = chat?.type == ChatType.GROUP
+    /** Group or channel (anything that is not a direct chat). */
+    val isGroup get() = chat != null && chat.type != ChatType.DIRECT
+    val isChannel get() = chat?.type == ChatType.CHANNEL
+    /** In a channel only the owner publishes. */
+    val canPost get() = isMember && (!isChannel || isOwner)
     val other: UserProfile? get() = chat?.peerOf(myId)?.let { users[it] }
     val canDeleteGroup get() = isGroup && (isOwner || isAdmin)
     val canLeave get() = isGroup && isMember && !isOwner
@@ -89,18 +101,39 @@ class ChatViewModel(private val c: AppContainer, private val chatId: String) : V
                 else try {
                     UiMessage(msg, c.e2ee.decrypt(chat, user.uid, msg.senderId, msg.env), false).also { decryptCache[key] = it }
                 } catch (e: Exception) {
-                    if (chat.type == ChatType.GROUP) keyMissing = true
+                    if (chat.type != ChatType.DIRECT) keyMissing = true
                     UiMessage(msg, null, true)
                 }
             }
         }
     }
 
-    val state: StateFlow<ChatUiState> = combine(chatFlow, msgFlow, decrypted, users, me) { ch, m, d, u, user ->
+    private val stats = chatFlow.map { it.chat?.type }.distinctUntilChanged().flatMapLatest { t ->
+        if (t == null || t == ChatType.DIRECT) flowOf(emptyMap<String, MemberStat>()) else c.repo.observeStats(chatId)
+    }.catch { emit(emptyMap()) }
+
+    private val base = combine(chatFlow, msgFlow, decrypted, users, me) { ch, m, d, u, user ->
         ChatUiState(ch.chat, ch.loaded, d, m.loaded, u, user)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
+    }
+
+    val state: StateFlow<ChatUiState> = combine(base, stats) { b, st -> b.copy(stats = st) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
+
+    val settings: StateFlow<AppSettings> = c.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
+
+    /** True while the chat screen is on screen; used to count time spent in a group (for rank tags). */
+    @Volatile private var active = false
+    fun setActive(value: Boolean) { active = value }
 
     init {
+        // Time in the group: +1 minute for every minute the chat is open
+        viewModelScope.launch {
+            while (true) {
+                delay(60_000)
+                val s = state.value
+                if (active && s.isGroup && s.isMember && s.myId.isNotEmpty()) c.repo.touchStats(chatId, s.myId, 1, 0)
+            }
+        }
         // Read receipts
         viewModelScope.launch {
             state.map { s -> Triple(s.chat, s.myId, s.messages.count { s.myId !in it.message.readBy && !it.message.deleted }) }
@@ -118,9 +151,9 @@ class ChatViewModel(private val c: AppContainer, private val chatId: String) : V
         val body = text.trim()
         if (body.isEmpty()) return
         viewModelScope.launch {
-            c.repo.send(chat, s.myId, Content(Content.KIND_TEXT, text = body)).onFailure {
-                _events.tryEmit("Не отправлено: ${it.message}"); onFailure(text)
-            }
+            c.repo.send(chat, s.myId, Content(Content.KIND_TEXT, text = body))
+                .onSuccess { if (chat.type != ChatType.DIRECT) c.repo.touchStats(chatId, s.myId, 0, 1) }
+                .onFailure { _events.tryEmit("Не отправлено: ${it.message}"); onFailure(text) }
         }
     }
 
@@ -132,6 +165,47 @@ class ChatViewModel(private val c: AppContainer, private val chatId: String) : V
             c.repo.sendImage(chat, s.myId, uri).onFailure { _events.tryEmit("Фото не отправлено: ${it.message}") }
             _sending.value = false
         }
+    }
+
+    fun sendSticker(file: java.io.File) {
+        val s = state.value
+        val chat = s.chat ?: return
+        viewModelScope.launch {
+            _sending.value = true
+            val r = withContext(Dispatchers.IO) {
+                runCatching {
+                    val bytes = file.readBytes()
+                    val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, o)
+                    Triple(bytes, o.outWidth, o.outHeight)
+                }
+            }
+            r.onSuccess { (bytes, w, h) ->
+                c.repo.sendSticker(chat, s.myId, bytes, w, h).onFailure { _events.tryEmit("Стикер не отправлен: ${it.message}") }
+            }.onFailure { _events.tryEmit("Не удалось прочитать стикер") }
+            _sending.value = false
+        }
+    }
+
+    /** Mutes / unmutes notifications of this chat (or of the other person in a direct chat). */
+    fun toggleMute() {
+        val s = state.value
+        val chat = s.chat ?: return
+        val key = if (chat.type == ChatType.DIRECT) "u:${chat.peerOf(s.myId).orEmpty()}" else "c:${chat.id}"
+        val muted = key in settings.value.muted
+        viewModelScope.launch { c.settings.setMuted(key, !muted) }
+    }
+
+    fun isMuted(chat: Chat?, myId: String, muted: Set<String>): Boolean =
+        chat != null && (if (chat.type == ChatType.DIRECT) "u:${chat.peerOf(myId).orEmpty()}" in muted else "c:${chat.id}" in muted)
+
+    fun setSelfTag(tag: String) {
+        val s = state.value
+        viewModelScope.launch { c.repo.setSelfTag(chatId, s.myId, tag).onFailure { _events.tryEmit(it.message ?: "Не удалось сохранить тег") } }
+    }
+
+    fun updateTags(creatorTags: Boolean, selfTags: Boolean, ladder: List<TagStep>) {
+        viewModelScope.launch { c.repo.updateTagSettings(chatId, creatorTags, selfTags, ladder).onFailure { _events.tryEmit(it.message ?: "Не удалось сохранить") } }
     }
 
     fun react(m: UiMessage, emoji: String) {

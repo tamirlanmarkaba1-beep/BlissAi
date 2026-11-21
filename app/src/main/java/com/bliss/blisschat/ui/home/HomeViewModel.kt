@@ -22,12 +22,14 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-enum class ChatFilter(val label: String) { GROUPS("группы"), UNREAD("непрочитано"), CONTACTS("контакты") }
+enum class ChatFilter(val label: String) { GROUPS("группы"), CHANNELS("каналы"), UNREAD("непрочитано"), CONTACTS("контакты") }
 
 data class HomeState(val me: UserProfile? = null, val items: List<ChatItem> = emptyList(), val loading: Boolean = true)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(private val c: AppContainer) : ViewModel() {
+
+    val systemBot get() = c.systemBot.messages
 
     val query = MutableStateFlow("")
     /** null = show everything */
@@ -58,6 +60,7 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
             return when {
                 chat.lastMsgId.isNotEmpty() -> "Сообщение удалено"
                 chat.type == ChatType.DIRECT -> "Напишите первое сообщение"
+                chat.type == ChatType.CHANNEL -> "Канал создан"
                 else -> "Группа создана"
             }
         }
@@ -65,7 +68,7 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
         val text = previews.getOrPut(key) {
             runCatching { c.e2ee.decrypt(chat, myId, chat.lastSenderId, env).preview }.getOrDefault("🔒 Зашифрованное сообщение")
         }
-        return if (chat.type == ChatType.GROUP) {
+        return if (chat.type == ChatType.GROUP) { // channel posts are shown without an author
             val who = if (chat.lastSenderId == myId) "Вы" else people[chat.lastSenderId]?.title.orEmpty()
             if (who.isEmpty()) text else "$who: $text"
         } else text
@@ -88,6 +91,7 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
             }
             val byFilter = when (i.f) {
                 ChatFilter.GROUPS -> items.filter { it.chat.type == ChatType.GROUP }
+                ChatFilter.CHANNELS -> items.filter { it.chat.type == ChatType.CHANNEL }
                 ChatFilter.UNREAD -> items.filter { it.unread }
                 ChatFilter.CONTACTS -> items.filter { it.chat.type == ChatType.DIRECT }
                 null -> items

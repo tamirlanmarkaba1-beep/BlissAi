@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,26 +15,32 @@ android {
         applicationId = "com.bliss.blisschat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = 3
+        versionName = "2.1.0"
     }
 
-    // Fixed key committed to the repo so the SHA-1 stays the same on every machine / CI run
-    // (Google Sign-In is bound to the SHA-1). Replace with your own keystore for a public release.
     signingConfigs {
-        create("blisschat") {
-            storeFile = file("blisschat.keystore")
-            storePassword = "blisschat"
-            keyAlias = "blisschat"
-            keyPassword = "blisschat"
+        create("releaseKey") {
+            val keystoreFile = file("release.keystore")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("STORE_PASSWORD")?.takeIf { it.isNotBlank() } ?: "123456"
+                keyAlias = System.getenv("KEY_ALIAS")?.takeIf { it.isNotBlank() } ?: "bliss"
+                keyPassword = System.getenv("KEY_PASSWORD")?.takeIf { it.isNotBlank() } ?: "123456"
+            }
         }
     }
 
     buildTypes {
-        debug { signingConfig = signingConfigs.getByName("blisschat") }
+        debug {
+            val cfg = signingConfigs.findByName("releaseKey")
+            if (cfg?.storeFile != null) signingConfig = cfg
+        }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("blisschat")
+            val cfg = signingConfigs.findByName("releaseKey")
+            if (cfg?.storeFile != null) signingConfig = cfg
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
@@ -79,7 +87,7 @@ val downloadNunito by tasks.registering {
         )
         for (u in urls) {
             try {
-                java.net.URL(u).openStream().use { input ->
+                URI.create(u).toURL().openStream().use { input ->
                     target.outputStream().use { out -> input.copyTo(out) }
                 }
                 if (target.length() > 50_000) break else target.delete()
@@ -123,13 +131,9 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.firebase:firebase-messaging")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
-
-    // Google Sign-In through Credential Manager
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // WebRTC (prebuilt libwebrtc) for audio / video calls
     implementation("io.getstream:stream-webrtc-android:1.1.1")

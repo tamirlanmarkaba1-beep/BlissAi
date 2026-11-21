@@ -47,6 +47,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -242,6 +243,19 @@ fun PillTextField(
 
 /* ------------------------------------------------------------------ avatars & badges */
 
+private val dataUriCache = object : android.util.LruCache<String, androidx.compose.ui.graphics.ImageBitmap>(64) {}
+
+/** Decodes "data:image/...;base64,..." avatars (cached, so lists stay smooth). */
+internal fun decodeDataUri(uri: String): androidx.compose.ui.graphics.ImageBitmap? {
+    dataUriCache.get(uri)?.let { return it }
+    val bmp = runCatching {
+        val bytes = android.util.Base64.decode(uri.substringAfter("base64,"), android.util.Base64.DEFAULT)
+        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+    }.getOrNull()
+    if (bmp != null) dataUriCache.put(uri, bmp)
+    return bmp
+}
+
 @Composable
 fun Avatar(url: String, name: String, size: Dp = 48.dp, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
@@ -249,7 +263,10 @@ fun Avatar(url: String, name: String, size: Dp = 48.dp, modifier: Modifier = Mod
         modifier.size(size).clip(AvatarShape).background(scheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
-        if (url.isNotBlank()) {
+        val inline = remember(url) { if (url.startsWith("data:")) decodeDataUri(url) else null }
+        if (inline != null) {
+            androidx.compose.foundation.Image(inline, name, Modifier.size(size), contentScale = ContentScale.Crop)
+        } else if (url.isNotBlank() && !url.startsWith("data:")) {
             AsyncImage(model = url, contentDescription = name, contentScale = ContentScale.Crop, modifier = Modifier.size(size))
         } else {
             val initials = name.trim().split(" ", "_").filter { it.isNotEmpty() }

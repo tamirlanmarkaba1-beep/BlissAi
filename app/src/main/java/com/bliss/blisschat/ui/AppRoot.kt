@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -58,7 +59,13 @@ import com.bliss.blisschat.ui.auth.SessionErrorScreen
 import com.bliss.blisschat.ui.auth.SplashScreen
 import com.bliss.blisschat.ui.call.CallScreen
 import com.bliss.blisschat.ui.chat.ChatScreen
+import com.bliss.blisschat.ui.create.CreateScreen
 import com.bliss.blisschat.ui.home.HomeScreen
+import com.bliss.blisschat.ui.home.SystemBotScreen
+import com.bliss.blisschat.ui.plugins.ModerationScreen
+import com.bliss.blisschat.ui.plugins.PluginsScreen
+import com.bliss.blisschat.ui.stickers.StickersScreen
+import com.bliss.blisschat.ui.update.UpdateDialog
 import com.bliss.blisschat.ui.profile.ProfileScreen
 import com.bliss.blisschat.ui.settings.SettingsScreen
 import com.bliss.blisschat.ui.theme.AvatarShape
@@ -116,6 +123,19 @@ private fun MainNav(container: AppContainer) {
     val showBar = route in Tabs.map { it.route }
     val myId = container.currentUid.orEmpty()
 
+    // Background update check on every start of the main screen
+    LaunchedEffect(Unit) { container.updates.check(silent = true) }
+    UpdateDialog(container.updates)
+
+    // Tapped notification -> open that chat
+    val pending by container.pendingChat.collectAsStateWithLifecycle()
+    LaunchedEffect(pending) {
+        pending?.let { id ->
+            container.pendingChat.value = null
+            nav.navigate("chat/$id") { launchSingleTop = true }
+        }
+    }
+
     Box(Modifier.fillMaxSize()) {
         NavHost(
             navController = nav, startDestination = "chats", modifier = Modifier.fillMaxSize(),
@@ -125,14 +145,24 @@ private fun MainNav(container: AppContainer) {
             popEnterTransition = { slideInHorizontally(tween(300)) { -it / 5 } + fadeIn(tween(300)) },
             popExitTransition = { slideOutHorizontally(tween(300)) { it / 4 } + fadeOut(tween(200)) }
         ) {
-            composable("chats") { HomeScreen(container) { id -> nav.navigate("chat/$id") } }
+            composable("chats") { HomeScreen(container, onOpenChat = { id -> nav.navigate("chat/$id") }, onCreate = { nav.navigate("create") }, onOpenSystemBot = { nav.navigate("bot") }) }
+            composable("create") { CreateScreen(container, onClose = { nav.popBackStack() }, onOpenChat = { id -> nav.navigate("chat/$id") { popUpTo("chats") } }) }
+            composable("bot") { SystemBotScreen(container) { nav.popBackStack() } }
+            composable("plugins") { PluginsScreen(container) { nav.popBackStack() } }
+            composable("moderation") { ModerationScreen(container) { nav.popBackStack() } }
+            composable("stickers") { StickersScreen(container) { nav.popBackStack() } }
             composable("profile") {
                 ProfileScreen(container, myId, onBack = null, onOpenChat = { id -> nav.navigate("chat/$id") })
             }
-            composable("settings") { SettingsScreen(container) { nav.navigate("admin") } }
+            composable("settings") {
+                SettingsScreen(
+                    container, onOpenAdmin = { nav.navigate("admin") }, onOpenPlugins = { nav.navigate("plugins") },
+                    onOpenStickers = { nav.navigate("stickers") }, onOpenModeration = { nav.navigate("moderation") }
+                )
+            }
             composable("chat/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
                 val id = e.arguments?.getString("id").orEmpty()
-                ChatScreen(container, id, onBack = { nav.popBackStack() }, onOpenProfile = { uid -> nav.navigate("user/$uid") })
+                ChatScreen(container, id, onBack = { nav.popBackStack() }, onOpenProfile = { uid -> nav.navigate("user/$uid") }, onOpenStickers = { nav.navigate("stickers") })
             }
             composable("user/{uid}", arguments = listOf(navArgument("uid") { type = NavType.StringType })) { e ->
                 val uid = e.arguments?.getString("uid").orEmpty()

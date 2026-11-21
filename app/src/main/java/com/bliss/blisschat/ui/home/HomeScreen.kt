@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -80,12 +81,12 @@ import com.bliss.blisschat.ui.theme.ButtonBlob
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(container: AppContainer, onOpenChat: (String) -> Unit) {
+fun HomeScreen(container: AppContainer, onOpenChat: (String) -> Unit, onCreate: () -> Unit, onOpenSystemBot: () -> Unit) {
     val vm: HomeViewModel = viewModel(factory = container.factory())
     val state by vm.state.collectAsStateWithLifecycle()
     val query by vm.query.collectAsStateWithLifecycle()
     val filter by vm.filter.collectAsStateWithLifecycle()
-    var showNew by rememberSaveable { mutableStateOf(false) }
+    val botMessages by vm.systemBot.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize()) {
         BlissBackdrop(1)
@@ -116,7 +117,7 @@ fun HomeScreen(container: AppContainer, onOpenChat: (String) -> Unit) {
                     Text("чаты", style = MaterialTheme.typography.titleLarge)
                 }
                 BlobButton(
-                    Icons.Filled.Add, "Новый чат", onClick = { showNew = true }, size = 64.dp,
+                    Icons.Filled.Add, "Создать", onClick = onCreate, size = 64.dp,
                     container = MaterialTheme.colorScheme.primaryContainer, content = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
@@ -143,12 +144,20 @@ fun HomeScreen(container: AppContainer, onOpenChat: (String) -> Unit) {
                 transitionSpec = { fadeIn(tween(220, 60)) togetherWith fadeOut(tween(90)) }, label = "home-empty"
             ) { empty ->
                 if (empty) {
-                    EmptyState(filter != null, query.isNotBlank())
+                    Column(Modifier.fillMaxSize()) {
+                        if (filter == null && query.isBlank()) Box(Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp)) {
+                            SystemBotRow(botMessages.lastOrNull()?.text?.lineSequence()?.firstOrNull().orEmpty(), botMessages.lastOrNull()?.ts ?: 0L, onOpenSystemBot)
+                        }
+                        EmptyState(filter != null, query.isNotBlank())
+                    }
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 120.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()
                     ) {
+                        if (filter == null && query.isBlank()) item(key = "system-bot") {
+                            SystemBotRow(botMessages.lastOrNull()?.text?.lineSequence()?.firstOrNull().orEmpty(), botMessages.lastOrNull()?.ts ?: 0L, onOpenSystemBot)
+                        }
                         items(state.items, key = { it.chat.id }) { item ->
                             ChatRow(item, Modifier.animateItem()) { onOpenChat(item.chat.id) }
                         }
@@ -158,8 +167,23 @@ fun HomeScreen(container: AppContainer, onOpenChat: (String) -> Unit) {
         }
     }
 
-    if (showNew) {
-        NewChatSheet(vm, onDismiss = { showNew = false }, onOpenChat = { id -> showNew = false; onOpenChat(id) })
+}
+
+/** Pinned row of the built-in @blisschat_bot. */
+@Composable
+private fun SystemBotRow(preview: String, time: Long, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f))
+            .bounceClick(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Avatar("", "blisschat bot", size = 56.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            NameWithBadges("blisschat_bot", verified = true, support = true)
+            Text(preview.ifBlank { "Системные сообщения" }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (time > 0) Text(formatListTime(time), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -177,8 +201,8 @@ private fun ChatRow(item: ChatItem, modifier: Modifier, onClick: () -> Unit) {
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (item.chat.type == ChatType.GROUP) {
-                    Icon(Icons.Filled.Group, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (item.chat.type != ChatType.DIRECT) {
+                    Icon(if (item.chat.type == ChatType.CHANNEL) Icons.Filled.Campaign else Icons.Filled.Group, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(5.dp))
                 }
                 NameWithBadges(item.title.ifBlank { "Без названия" }, item.verified, item.support)
@@ -210,54 +234,8 @@ private fun EmptyState(filtered: Boolean, searching: Boolean) {
         Spacer(Modifier.height(6.dp))
         Text(
             if (searching || filtered) "Попробуйте другой запрос или фильтр."
-            else "Нажмите «+», чтобы написать кому-то по @username или создать группу. Все сообщения шифруются на вашем устройстве.",
+            else "Нажмите «+», чтобы написать кому-то, создать канал, группу или бота. Все сообщения шифруются на вашем устройстве.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun NewChatSheet(vm: HomeViewModel, onDismiss: () -> Unit, onOpenChat: (String) -> Unit) {
-    var tab by rememberSaveable { mutableStateOf(0) }
-    var busy by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var dmUser by rememberSaveable { mutableStateOf("") }
-    var groupName by rememberSaveable { mutableStateOf("") }
-    var groupMembers by rememberSaveable { mutableStateOf("") }
-
-    val handle: (Result<String>) -> Unit = { r -> busy = false; r.onSuccess(onOpenChat).onFailure { error = it.message } }
-
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)) {
-        Column(
-            Modifier.fillMaxWidth().imePadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp)
-        ) {
-            Text("Новый чат", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
-            PrimaryTabRow(selectedTabIndex = tab, containerColor = Color.Transparent) {
-                listOf("Личный", "Группа").forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i; error = null }, text = { Text(t) }) }
-            }
-            Spacer(Modifier.height(20.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (tab == 0) {
-                    Text("Напишите человеку по его @username.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    PillTextField(dmUser, { dmUser = it; error = null }, "username", leading = Icons.Filled.AlternateEmail)
-                } else {
-                    PillTextField(groupName, { groupName = it; error = null }, "Название группы", leading = Icons.Filled.Group)
-                    PillTextField(groupMembers, { groupMembers = it; error = null }, "Участники: @anna, @ivan", leading = Icons.Filled.AlternateEmail)
-                    Text("У группы будет свой ключ шифрования, который получат только участники.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            AnimatedVisibility(error != null) {
-                Text(error.orEmpty(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 12.dp, start = 8.dp))
-            }
-            Spacer(Modifier.height(20.dp))
-            BouncyButton(
-                if (tab == 0) "Начать чат" else "Создать группу", loading = busy, modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    busy = true; error = null
-                    if (tab == 0) vm.startDirect(dmUser, handle) else vm.createGroup(groupName, groupMembers, handle)
-                }
-            )
-        }
     }
 }
