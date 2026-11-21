@@ -37,7 +37,13 @@ object Notifications {
         nm.createNotificationChannel(
             NotificationChannel(CH_CALLS, "Входящие звонки", NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "Звонки в blisschat"
-                setSound(ring, AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIC).build())
+                setSound(
+                    ring,
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 600, 400, 600, 400, 600)
                 lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
