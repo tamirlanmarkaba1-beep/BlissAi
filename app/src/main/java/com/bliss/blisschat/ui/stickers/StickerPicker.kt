@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bliss.blisschat.AppContainer
+import com.bliss.blisschat.data.stickers.StickerPack
 import com.bliss.blisschat.ui.components.bounceClick
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -60,46 +60,99 @@ fun StickerImage(file: File, size: Dp, modifier: Modifier = Modifier) {
             }?.also { stickerCache.put(key, it) }
         }
     }
-    Box(modifier.height(size), contentAlignment = Alignment.Center) {
-        bmp?.let { Image(it.asImageBitmap(), null, Modifier.height(size), contentScale = ContentScale.Fit) }
+    Box(
+        modifier = modifier.height(size),
+        contentAlignment = Alignment.Center
+    ) {
+        bmp?.let {
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.height(size),
+                contentScale = ContentScale.Fit
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StickerPicker(container: AppContainer, onPick: (File) -> Unit, onManage: () -> Unit, onDismiss: () -> Unit) {
-    val packs by container.stickers.packs.collectAsStateWithLifecycle()
+fun StickerPicker(
+    container: AppContainer,
+    onPick: (File) -> Unit,
+    onManage: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val packs: List<StickerPack> by container.stickers.packs.collectAsStateWithLifecycle()
     var selected by remember { mutableIntStateOf(0) }
+
     ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(),
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(),
         shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
     ) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
-            if (packs.none { it.stickers.isNotEmpty() }) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp)
+        ) {
+            if (packs.isEmpty() || packs.none { it.stickers.isNotEmpty() }) {
                 Text(
-                    "Стикеров пока нет. Создайте свой набор — он появится здесь.",
-                    style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "Стикеров пока нет. Создайте свой набор — он появится здесь.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 24.dp)
                 )
             } else {
                 val idx = selected.coerceIn(0, packs.lastIndex)
+                val currentPack = packs[idx]
+
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(packs.size) { i ->
-                        FilterChip(selected = i == idx, onClick = { selected = i }, label = { Text(packs[i].name) })
+                    items(count = packs.size) { i ->
+                        FilterChip(
+                            selected = i == idx,
+                            onClick = { selected = i },
+                            label = { Text(packs[i].name) }
+                        )
                     }
                 }
+
                 Spacer(Modifier.height(10.dp))
+
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(84.dp), modifier = Modifier.height(280.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+                    columns = GridCells.Adaptive(84.dp),
+                    modifier = Modifier.height(280.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(packs[idx].stickers) { f ->
-                        Box(Modifier.bounceClick { onPick(f); onDismiss() }, contentAlignment = Alignment.Center) { StickerImage(f, 84.dp) }
+                    items(items = currentPack.stickers) { stickerFile ->
+                        Box(
+                            modifier = Modifier.bounceClick {
+                                onPick(stickerFile)
+                                onDismiss()
+                            },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            StickerImage(file = stickerFile, size = 84.dp)
+                        }
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { onDismiss(); onManage() }) { Text("Создать / изменить наборы") }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                        onManage()
+                    }
+                ) {
+                    Text("Создать / изменить наборы")
+                }
             }
         }
     }
