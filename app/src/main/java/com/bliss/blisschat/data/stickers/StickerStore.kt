@@ -17,10 +17,6 @@ import java.util.UUID
 
 data class StickerPack(val id: String, val name: String, val stickers: List<File>)
 
-/**
- * Sticker packs live on this phone (files/stickers/{pack}/*.png). Stickers are sent as encrypted images,
- * so the other person does not need the pack. Packs can also arrive through approved plugins.
- */
 class StickerStore(context: Context) {
     private val app = context.applicationContext
     private val root = File(app.filesDir, "stickers").apply { mkdirs() }
@@ -30,12 +26,15 @@ class StickerStore(context: Context) {
     private fun load(): List<StickerPack> =
         root.listFiles { f -> f.isDirectory }.orEmpty().sortedBy { it.lastModified() }.map { dir ->
             StickerPack(
-                dir.name, File(dir, "name.txt").takeIf { it.exists() }?.readText()?.trim().orEmpty().ifBlank { "Набор" },
+                dir.name,
+                File(dir, "name.txt").takeIf { it.exists() }?.readText()?.trim().orEmpty().ifBlank { "Набор" },
                 dir.listFiles { f -> f.extension == "png" }.orEmpty().sortedBy { it.name }.toList()
             )
         }
 
-    private fun refresh() { _packs.value = load() }
+    private fun refresh() {
+        _packs.value = load()
+    }
 
     fun createPack(name: String): StickerPack {
         val id = UUID.randomUUID().toString().take(8)
@@ -50,11 +49,16 @@ class StickerStore(context: Context) {
         refresh()
     }
 
-    fun deletePack(packId: String) { File(root, packId).deleteRecursively(); refresh() }
+    fun deletePack(packId: String) {
+        File(root, packId).deleteRecursively()
+        refresh()
+    }
 
-    fun removeSticker(file: File) { file.delete(); refresh() }
+    fun removeSticker(file: File) {
+        file.delete()
+        refresh()
+    }
 
-    /** Cuts a picture from the gallery down to a 512 px PNG (transparent PNGs keep their transparency). */
     suspend fun addFromUri(packId: String, uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val resolver = app.contentResolver
@@ -62,8 +66,9 @@ class StickerStore(context: Context) {
             resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
             var sample = 1
             while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1024) sample *= 2
-            var bmp = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
-                ?: error("Не удалось открыть изображение")
+            var bmp = resolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+            } ?: error("Не удалось открыть изображение")
             val rotation = runCatching {
                 resolver.openInputStream(uri)?.use {
                     when (ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, 1)) {
@@ -78,22 +83,29 @@ class StickerStore(context: Context) {
             var bytes: ByteArray
             do {
                 val scale = side.toFloat() / maxOf(bmp.width, bmp.height)
-                val m = Matrix().apply { if (scale < 1f) postScale(scale, scale); if (rotation != 0f && side == 512) postRotate(rotation) }
+                val m = Matrix().apply {
+                    if (scale < 1f) postScale(scale, scale)
+                    if (rotation != 0f && side == 512) postRotate(rotation)
+                }
                 val scaled = if (m.isIdentity) bmp else Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
                 val out = ByteArrayOutputStream()
                 scaled.compress(Bitmap.CompressFormat.PNG, 100, out)
                 bytes = out.toByteArray()
-                if (bytes.size > 300_000) { bmp = scaled; side = (side * 0.8).toInt() } else break
+                if (bytes.size > 300_000) {
+                    bmp = scaled
+                    side = (side * 0.8).toInt()
+                } else break
             } while (side >= 160)
             saveBytes(packId, bytes)
         }
     }
 
-    /** Used by plugins: adds an already prepared PNG/JPEG/WebP file. */
     fun addBytes(packId: String, data: ByteArray): Result<Unit> = runCatching {
         val bmp = BitmapFactory.decodeByteArray(data, 0, data.size) ?: error("Это не изображение")
         val scale = 512f / maxOf(bmp.width, bmp.height)
-        val scaled = if (scale < 1f) Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt().coerceAtLeast(1), (bmp.height * scale).toInt().coerceAtLeast(1), true) else bmp
+        val scaled = if (scale < 1f) {
+            Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt().coerceAtLeast(1), (bmp.height * scale).toInt().coerceAtLeast(1), true)
+        } else bmp
         val out = ByteArrayOutputStream()
         scaled.compress(Bitmap.CompressFormat.PNG, 100, out)
         saveBytes(packId, out.toByteArray())
