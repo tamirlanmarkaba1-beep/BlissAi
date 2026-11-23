@@ -1,0 +1,216 @@
+package com.bliss.blisschat.data.plugins
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
+import com.bliss.blisschat.data.SettingsStore
+import com.bliss.blisschat.data.UserProfile
+import com.bliss.blisschat.data.mapFailure
+import com.bliss.blisschat.data.stickers.StickerStore
+import com.google.firebase.firestore.Blob
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.util.zip.ZipInputStream
+
+data class Plugin(
+    val id: String, val name: String, val version: String, val description: String, val type: String,
+    val authorId: String, val author: String, val status: String, val note: String, val size: Int, val createdAt: Long
+) {
+    val typeLabel get() = if (type == "theme") "Тема" else "Стикеры"
+}
+
+data class Manifest(val name: String, val version: String, val description: String, val type: String, val hue: Float?, val dark: Boolean?, val images: Int)
+
+/**
+ * Plugins are .zip files with a manifest.json:
+ *   {"name":"Ocean","version":"1.0","description":"...","type":"theme","theme":{"hue":200,"dark":true}}
+ *   {"name":"Cats","version":"1.0","type":"stickers"}  + images (png/jpg/webp) in the archive
+ * New plugins wait ("pending") until a moderator approves them; only approved ones are in the catalogue.
+ * Plugins never contain code - they only change data (a theme or a sticker pack), so installing is safe.
+ */
+class PluginRepository(private val context: Context, private val stickers: StickerStore, private val settings: SettingsStore) {
+    companion object {
+        const val MAX_ZIP = 700 * 1024
+        private const val MAX_UNPACKED = 6 * 1024 * 1024
+        private val IMAGE_EXT = setOf("png", "jpg", "jpeg", "webp")
+    }
+
+    private val db get() = FirebaseFirestore.getInstance()
+    private val col get() = db.collection("plugins")
+    private val files get() = db.collection("pluginFiles")
+    private val prefs = context.getSharedPreferences("plugins", Context.MODE_PRIVATE)
+
+    /** plugin id -> sticker pack id ("" when the plugin created none) */
+    private val _installed = MutableStateFlow(loadInstalled())
+    val installed: StateFlow<Map<String, String>> = _installed.asStateFlow()
+
+    private fun loadInstalled(): Map<String, String> =
+        prefs.getStringSet("installed", emptySet()).orEmpty().mapNotNull { e -> e.split("|", limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
+
+    private fun saveInstalled(m: Map<String, String>) {
+        prefs.edit().putStringSet("installed", m.map { "${it.key}|${it.value}" }.toSet()).apply()
+        _installed.value = m
+    }
+
+    private fun DocumentSnapshot.toPlugin(): Plugin? {
+        val n = getString("name") ?: return null
+        return Plugin(
+            id = id, name = n, version = getString("version").orEmpty(), description = getString("description").orEmpty(),
+            type = getString("type").orEmpty(), authorId = getString("authorId").orEmpty(), author = getString("author").orEmpty(),
+            status = getString("status").orEmpty(), note = getString("note").orEmpty(),
+            size = (getLong("size") ?: 0L).toInt(), createdAt = getLong("createdAt") ?: 0L
+        )
+    }
+
+    private fun observe(q: Query): Flow<List<Plugin>> = callbackFlow {
+        val reg = q.addSnapshotListener { snap, e ->
+            if (e != null) { trySend(emptyList()); return@addSnapshotListener }
+            trySend(snap?.documents.orEmpty().mapNotNull { it.toPlugin() }.sortedByDescending { it.createdAt })
+        }
+        awaitClose { reg.remove() }
+    }
+
+    fun observeApproved() = observe(col.whereEqualTo("status", "approved"))
+    fun observeMine(uid: String) = observe(col.whereEqualTo("authorId", uid))
+    fun observePending() = observe(col.whereEqualTo("status", "pending"))
+
+    /** Validates the archive and returns what is inside. */
+    fun parse(bytes: ByteArray): Manifest {
+        require(bytes.size >= 4 && bytes[0] == 'P'.code.toByte() && bytes[1] == 'K'.code.toByte()) { "Принимаются только файлы .zip" }
+        var manifest: JSONObject? = null
+        var images = 0
+        var total = 0
+        ZipInputStream(ByteArrayInputStream(bytes)).use { zin ->
+            while (true) {
+                val e = zin.nextEntry ?: break
+                val name = e.name
+                require(!name.contains("..")) { "Недопустимый путь в архиве: $name" }
+                if (e.isDirectory) continue
+                val data = zin.readBytes()
+                total += data.size
+                require(total <= MAX_UNPACKED) { "Архив слишком большой после распаковки" }
+                if (name == "manifest.json") manifest = JSONObject(String(data, Charsets.UTF_8))
+                else if (name.substringAfterLast('.', "").lowercase() in IMAGE_EXT) images++
+            }
+        }
+        val m = manifest ?: error("В архиве нет manifest.json (в корне)")
+        val type = m.optString("type")
+        require(type == "theme" || type == "stickers") { "type должен быть theme или stickers" }
+        val name = m.optString("name").trim()
+        require(name.isNotEmpty() && name.length <= 40) { "Укажите name (до 40 символов)" }
+        var hue: Float? = null
+        var dark: Boolean? = null
+        if (type == "theme") {
+            val t = m.optJSONObject("theme") ?: error("Для темы нужен объект theme")
+            require(t.has("hue")) { "В theme нужен hue (0–360)" }
+            hue = t.getDouble("hue").toFloat().coerceIn(0f, 360f)
+            if (t.has("dark")) dark = t.getBoolean("dark")
+        } else {
+            require(images in 1..60) { "Для стикеров нужно от 1 до 60 картинок" }
+        }
+        return Manifest(name, m.optString("version", "1.0").take(16), m.optString("description").take(300), type, hue, dark, images)
+    }
+
+    suspend fun submit(me: UserProfile, uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Не удалось прочитать файл")
+            require(bytes.size <= MAX_ZIP) { "Архив больше 700 КБ" }
+            val m = parse(bytes)
+            val id = col.document().id
+            files.document(id).set(mapOf("zip" to Blob.fromBytes(bytes), "authorId" to me.uid)).await()
+            try {
+                col.document(id).set(
+                    mapOf(
+                        "name" to m.name, "version" to m.version, "description" to m.description, "type" to m.type,
+                        "authorId" to me.uid, "author" to me.title, "status" to "pending", "note" to "",
+                        "size" to bytes.size, "createdAt" to System.currentTimeMillis()
+                    )
+                ).await()
+            } catch (e: Exception) {
+                runCatching { files.document(id).delete().await() }
+                throw e
+            }
+            Unit
+        }.mapFailure()
+    }
+
+    suspend fun moderate(actor: UserProfile, id: String, approve: Boolean, note: String): Result<Unit> = runCatching {
+        require(actor.moderator || actor.isAdmin) { "Нужны права модератора" }
+        col.document(id).update(
+            mapOf("status" to if (approve) "approved" else "rejected", "reviewedBy" to actor.uid, "note" to note.trim().take(300))
+        ).await()
+        Unit
+    }.mapFailure()
+
+    suspend fun downloadZip(id: String): ByteArray = withContext(Dispatchers.IO) {
+        files.document(id).get().await().getBlob("zip")?.toBytes() ?: error("Файл плагина не найден")
+    }
+
+    /** Saves the archive to the app's Plugins folder and returns an intent that lets the moderator share/open it. */
+    suspend fun exportForReview(p: Plugin): Result<Intent> = withContext(Dispatchers.IO) {
+        runCatching {
+            val bytes = downloadZip(p.id)
+            val dir = File(context.getExternalFilesDir(null), "Plugins").apply { mkdirs() }
+            val safe = p.name.replace(Regex("[^\\p{L}\\p{N}._-]"), "_")
+            val f = File(dir, "$safe-${p.version}.zip")
+            f.writeBytes(bytes)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).setType("application/zip").putExtra(Intent.EXTRA_STREAM, uri)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Скачанный плагин: ${f.name}"
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }.mapFailure()
+    }
+
+    suspend fun install(p: Plugin): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val bytes = downloadZip(p.id)
+            val m = parse(bytes)
+            var packId = ""
+            if (m.type == "theme") {
+                m.hue?.let { settings.setHue(it) }
+                m.dark?.let { settings.setDark(it) }
+            } else {
+                val pack = stickers.createPack(m.name)
+                packId = pack.id
+                var added = 0
+                ZipInputStream(ByteArrayInputStream(bytes)).use { zin ->
+                    while (true) {
+                        val e = zin.nextEntry ?: break
+                        if (e.isDirectory || e.name.substringAfterLast('.', "").lowercase() !in IMAGE_EXT) continue
+                        if (added >= 60) break
+                        if (stickers.addBytes(pack.id, zin.readBytes()).isSuccess) added++
+                    }
+                }
+                if (added == 0) { stickers.deletePack(pack.id); error("В плагине нет подходящих картинок") }
+            }
+            saveInstalled(_installed.value + (p.id to packId))
+        }.mapFailure()
+    }
+
+    fun uninstall(p: Plugin) {
+        val pack = _installed.value[p.id].orEmpty()
+        if (pack.isNotEmpty()) stickers.deletePack(pack)
+        saveInstalled(_installed.value - p.id)
+    }
+
+    suspend fun deleteMine(p: Plugin): Result<Unit> = runCatching {
+        col.document(p.id).delete().await()
+        runCatching { files.document(p.id).delete().await() }
+        Unit
+    }.mapFailure()
+}
