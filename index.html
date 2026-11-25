@@ -13,21 +13,66 @@
       box-sizing:border-box;
       padding-top:env(safe-area-inset-top,0px);
       padding-bottom:env(safe-area-inset-bottom,0px);
-      --bg:#d9f3ec; --blob1:#c8eae9; --blob2:#a2e0d1; --fg:#0c2b2a; --muted:#3f6361;
-      --accent:#0e6c6c; --accent-fg:#ffffff; --red:#a91410; --card:#ffffffb8; --line:#0e6c6c26;
+      --bg:#d9f3ec;
+      --blob1:#c8eae9;
+      --blob2:#a2e0d1;
+      --fg:#0c2b2a;
+      --muted:#3f6361;
+      --accent:#0e6c6c;
+      --accent-fg:#ffffff;
+      --accent-soft:#0e6c6c18;
+      --bubble-in:#ffffffd9;
+      --bubble-out:#0e6c6c;
+      --bubble-out-fg:#ffffff;
+      --red:#a91410;
+      --card:#ffffffc2;
+      --line:#0e6c6c26;
+      --phone-bezel:#15201f;
+      --phone-screen:#0f1716;
+      --shadow:0 16px 34px #0e6c6c24;
       --font:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     }
     @media (prefers-color-scheme:dark){
       :root:not([data-theme="light"]){
         color-scheme:dark;
-        --bg:#0b1110; --blob1:#10302e; --blob2:#14403a; --fg:#e4f4f0; --muted:#9bbab5;
-        --accent:#58d3c4; --accent-fg:#06201d; --red:#ff6b5e; --card:#16221fcc; --line:#58d3c433;
+        --bg:#0b1110;
+        --blob1:#10302e;
+        --blob2:#14403a;
+        --fg:#e4f4f0;
+        --muted:#9bbab5;
+        --accent:#58d3c4;
+        --accent-fg:#06201d;
+        --accent-soft:#58d3c41f;
+        --bubble-in:#182624e6;
+        --bubble-out:#29857a;
+        --bubble-out-fg:#f2fffd;
+        --red:#ff6b5e;
+        --card:#16221fd4;
+        --line:#58d3c433;
+        --phone-bezel:#223331;
+        --phone-screen:#090e0d;
+        --shadow:0 18px 38px #00000066;
       }
     }
     :root[data-theme="dark"]{
       color-scheme:dark;
-      --bg:#0b1110; --blob1:#10302e; --blob2:#14403a; --fg:#e4f4f0; --muted:#9bbab5;
-      --accent:#58d3c4; --accent-fg:#06201d; --red:#ff6b5e; --card:#16221fcc; --line:#58d3c433;
+      --bg:#0b1110;
+      --blob1:#10302e;
+      --blob2:#14403a;
+      --fg:#e4f4f0;
+      --muted:#9bbab5;
+      --accent:#58d3c4;
+      --accent-fg:#06201d;
+      --accent-soft:#58d3c41f;
+      --bubble-in:#182624e6;
+      --bubble-out:#29857a;
+      --bubble-out-fg:#f2fffd;
+      --red:#ff6b5e;
+      --card:#16221fd4;
+      --line:#58d3c433;
+      --phone-bezel:#223331;
+      --phone-screen:#090e0d;
+      --shadow:0 18px 38px #00000066;
     }
     :root[data-theme="light"]{
       color-scheme:light;
@@ -45,21 +90,67 @@
     [hidden]:not([hidden=until-found i]){display:none!important}
     .blob{position:absolute;z-index:0;pointer-events:none;border-radius:46% 54% 58% 42%/50% 44% 56% 50%}
     .b1{width:min(80vw,620px);aspect-ratio:1;background:var(--blob1);top:-18vw;left:-14vw;rotate:-12deg}
-    .b2{width:min(70vw,520px);aspect-ratio:1;background:var(--blob2);top:300px;right:-22vw;rotate:20deg}
-    main{position:relative;z-index:1;max-width:720px;margin:0 auto;padding-block:28px 40px;display:flex;flex-direction:column;gap:52px}
-    .topbar{display:flex;justify-content:flex-end}
+    .b2{width:min(70vw,520px);aspect-ratio:1;background:var(--blob2);top:340px;right:-22vw;rotate:20deg}
+
+    main{position:relative;z-index:1;max-width:780px;margin:0 auto;padding-block:28px 44px;display:flex;flex-direction:column;gap:56px}
+
+    /* Плавное выдвижение + секундное размытие при скролле */
+    .reveal{
+      opacity:0;
+      transform:translateY(28px);
+      filter:blur(10px);
+      transition:
+        opacity .75s cubic-bezier(.22,1,.36,1),
+        transform .85s cubic-bezier(.22,1,.36,1),
+        filter .95s cubic-bezier(.22,1,.36,1);
+      will-change:opacity,transform,filter;
+    }
+    .reveal.is-visible{
+      opacity:1;
+      transform:translateY(0);
+      filter:blur(0);
+    }
+
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .pill-status{
+      display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
+      background:var(--card);border:1px solid var(--line);color:var(--muted);
+      font:700 13px var(--font);
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
     .theme-btn{
       display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;
       background:var(--card);border:1px solid var(--line);color:var(--fg);
       font:700 14px var(--font);cursor:pointer;transition:transform .15s ease;
     }
     .theme-btn:hover{transform:translateY(-1px)}
+
     .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
-    .mark{width:min(46vw,190px);height:auto;filter:drop-shadow(0 14px 22px #0e6c6c33)}
+    .mark{width:min(44vw,182px);height:auto;filter:drop-shadow(0 14px 22px #0e6c6c33)}
     h1{font-size:clamp(40px,9vw,64px);line-height:1;margin:6px 0 0;font-weight:900;letter-spacing:-.02em}
-    .tag{max-width:30ch;margin:0;font-size:clamp(18px,3.8vw,22px);color:var(--muted);font-weight:600;text-wrap:balance}
+    .tag{max-width:32ch;margin:0;font-size:clamp(18px,3.8vw,22px);color:var(--muted);font-weight:600;text-wrap:balance}
+
+    .chat-preview-strip{
+      width:100%;max-width:520px;margin-top:6px;
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .msg-bubble{
+      max-width:82%;padding:10px 15px;font-size:14.5px;font-weight:600;line-height:1.4;
+      border:1px solid var(--line);box-shadow:0 6px 18px #00000012;
+    }
+    .msg-in{
+      align-self:flex-start;background:var(--bubble-in);color:var(--fg);
+      border-radius:20px 20px 20px 6px;
+    }
+    .msg-out{
+      align-self:flex-end;background:var(--bubble-out);color:var(--bubble-out-fg);
+      border-color:transparent;border-radius:20px 20px 6px 20px;
+    }
+    .msg-meta{display:block;font-size:11px;opacity:.75;margin-top:2px;text-align:right}
+
     .cta{
-      display:inline-flex;align-items:center;gap:12px;margin-top:14px;padding:18px 34px;border-radius:999px;
+      display:inline-flex;align-items:center;gap:12px;margin-top:12px;padding:18px 34px;border-radius:999px;
       background:var(--accent);color:var(--accent-fg);font:800 19px var(--font);text-decoration:none;
       transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .2s;box-shadow:0 10px 24px #0e6c6c40;
     }
@@ -67,20 +158,125 @@
     .cta:active{transform:scale(.97)}
     .cta:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid var(--red);outline-offset:3px}
     .cta svg{width:24px;height:24px}
+
     .meta{font-size:14px;color:var(--muted);font-weight:600;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;margin:0;padding:0;list-style:none}
     .meta li+li::before{content:"·";margin-right:16px}
     .notice{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 18px;font-size:15px;color:var(--muted);text-align:center}
-    h2{font-size:clamp(24px,5vw,30px);margin:0 0 18px;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
-    .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+
+    .sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:18px}
+    h2{font-size:clamp(24px,5vw,30px);margin:0;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
+    .sec-sub{margin:0;font-size:14.5px;color:var(--muted);font-weight:600}
+
+    /* Галерея скриншотов в рамке телефона с плавным 3D-поворотом */
+    .shots-wrap{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      gap:24px;
+      align-items:start;
+    }
+    .shot-card{
+      display:flex;flex-direction:column;align-items:center;gap:12px;
+      text-align:center;
+      perspective:950px;
+    }
+    .phone-frame{
+      --rx:0deg;
+      --ry:0deg;
+      --lift:0px;
+      --sc:1;
+      position:relative;
+      width:100%;
+      max-width:250px;
+      background:var(--phone-bezel);
+      border-radius:36px;
+      padding:10px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--line);
+      transform-style:preserve-3d;
+      transform:perspective(950px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift)) scale(var(--sc));
+      transition:transform .45s cubic-bezier(.22,1,.36,1),box-shadow .35s ease;
+      cursor:pointer;
+      will-change:transform;
+    }
+    .phone-frame.is-tilting{
+      transition:transform .1s ease-out,box-shadow .2s ease;
+      box-shadow:0 24px 46px #0000004d;
+    }
+    .phone-notch{
+      position:absolute;
+      top:16px;
+      left:50%;
+      transform:translateX(-50%) translateZ(12px);
+      width:68px;
+      height:16px;
+      background:var(--phone-bezel);
+      border-radius:999px;
+      z-index:3;
+      display:flex;align-items:center;justify-content:flex-end;padding-right:8px;
+    }
+    .phone-cam{
+      width:7px;height:7px;border-radius:50%;
+      background:#2c4441;border:1px solid #496e6a;
+    }
+    .phone-screen{
+      position:relative;
+      border-radius:27px;
+      overflow:hidden;
+      background:var(--phone-screen);
+      aspect-ratio:9 / 19.5;
+      transform:translateZ(6px);
+    }
+    .phone-screen img{
+      width:100%;height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .phone-home{
+      width:74px;height:4px;border-radius:999px;
+      background:#ffffff44;margin:8px auto 2px;
+      transform:translateZ(8px);
+    }
+    .shot-title{margin:0;font-size:16px;font-weight:800}
+    .shot-desc{margin:2px 0 0;font-size:14px;color:var(--muted)}
+
+    /* Лайтбокс */
+    .lightbox{
+      position:fixed;inset:0;z-index:100;
+      background:#060c0bd9;backdrop-filter:blur(8px);
+      display:grid;place-items:center;padding:20px;
+    }
+    .lightbox-box{
+      position:relative;max-width:380px;width:100%;
+      background:var(--phone-bezel);border-radius:40px;padding:12px;
+      border:1px solid var(--line);box-shadow:0 24px 60px #00000099;
+      text-align:center;
+    }
+    .lightbox-box .phone-screen{border-radius:30px;transform:none}
+    .lightbox-caption{margin:12px 6px 4px;font-weight:700;font-size:15px;color:var(--fg)}
+    .lightbox-close{
+      position:absolute;top:-14px;right:-14px;
+      width:38px;height:38px;border-radius:50%;
+      border:1px solid var(--line);background:var(--accent);color:var(--accent-fg);
+      font:800 18px var(--font);cursor:pointer;display:grid;place-items:center;
+    }
+
+    .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
     .f{background:var(--card);border:1px solid var(--line);padding:20px 22px;border-radius:30px 30px 30px 10px;min-width:0}
     .f:nth-child(even){border-radius:30px 30px 10px 30px}
+    .f-badge{
+      display:inline-block;padding:3px 10px;border-radius:999px;
+      background:var(--accent-soft);color:var(--accent);
+      font-size:12px;font-weight:800;margin-bottom:8px;
+    }
     .f h3{margin:0 0 4px;font-size:18px;font-weight:800}
     .f p{margin:0;color:var(--muted);font-size:16px}
+
     ol{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:s}
     ol li{counter-increment:s;display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:16px 20px;min-width:0}
     ol li::before{content:counter(s);flex:none;width:36px;height:36px;border-radius:44% 56% 52% 48%/50% 46% 54% 50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:900}
     ol b{display:block;font-weight:800}
     ol span{color:var(--muted);font-size:16px}
+
     details{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 20px}
     details+details{margin-top:10px}
     summary{cursor:pointer;font-weight:800}
@@ -96,20 +292,24 @@
     }
     footer{text-align:center;font-size:14px;color:var(--muted);padding-bottom:12px}
     .rb{display:block;height:8px;border-radius:99px;margin:18px auto 0;width:min(240px,60%);background:linear-gradient(90deg,#e5484d,#f5a524,#f2e12b,#3ccf7c,#2bb5e8,#6a5cf5,#d357e6,#e5484d)}
-    @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+    @media (prefers-reduced-motion:reduce){
+      *{transition:none!important}
+      .reveal{opacity:1;transform:none;filter:none}
+    }
   </style>
 </head>
 <body>
   <div class="blob b1"></div><div class="blob b2"></div>
   <main>
-    <div class="topbar">
+    <div class="topbar reveal">
+      <div class="pill-status"><span class="dot" aria-hidden="true"></span> E2EE · Прямые звонки · Кастомизация</div>
       <button class="theme-btn" id="themeToggle" type="button" aria-label="Переключить тему">
         <span id="themeIcon">🌙</span>
         <span id="themeLabel">Тёмная</span>
       </button>
     </div>
 
-    <section class="hero">
+    <section class="hero reveal">
       <svg class="mark" viewBox="0 0 108 108" role="img" aria-label="Значок blisschat">
         <defs><linearGradient id="g" x1="54" y1="32.40" x2="54" y2="88.00" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0e6c6c"/><stop offset="1" stop-color="#a91410"/></linearGradient></defs>
         <rect width="108" height="108" rx="28" fill="#a2e0d1"/>
@@ -120,6 +320,18 @@
       </svg>
       <h1>blisschat</h1>
       <p class="tag">Мессенджер, который читаете только вы. Шифрование, звонки и ваш цвет.</p>
+
+      <div class="chat-preview-strip" aria-hidden="true">
+        <div class="msg-bubble msg-in">
+          Ключи сгенерированы локально — сервер видит только шифртекст 🔒
+          <span class="msg-meta">12:59</span>
+        </div>
+        <div class="msg-bubble msg-out">
+          Звучит надёжно. Нажимаю скачать APK и проверяю SHA-256 ✓✓
+          <span class="msg-meta">13:00</span>
+        </div>
+      </div>
+
       <a class="cta" id="dl" href="https://github.com/tamirlanmarkaba1-beep/BlissAi/releases/download/Messenger/app-debug.apk" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 20h14"/></svg>
         Скачать для Android
@@ -132,33 +344,122 @@
       <div class="rb" aria-hidden="true"></div>
     </section>
 
-    <div class="notice" id="warn" hidden></div>
+    <div class="notice reveal" id="warn" hidden></div>
 
-    <section>
-      <h2>Что внутри</h2>
-      <div class="feat">
-        <div class="f"><h3>Сквозное шифрование</h3><p>Сообщения, фото и звонки шифруются на вашем телефоне. Сервер видит только набор непонятных символов.</p></div>
-        <div class="f"><h3>Аудио и видеозвонки</h3><p>Прямое соединение между телефонами. Микрофон, динамик, смена камеры, завершение вызова.</p></div>
-        <div class="f"><h3>Группы и значки</h3><p>Галочки доставки и прочтения, реакции, удаление у всех или только у себя, значки верификации.</p></div>
-        <div class="f"><h3>Ваш цвет</h3><p>Один ползунок меняет акценты и свечение фона по всему спектру, от красного до фиолетового.</p></div>
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>Скриншоты из приложения</h2>
+        <p class="sec-sub">Поверните в 3D или нажмите для просмотра</p>
+      </div>
+      <div class="shots-wrap">
+        <div class="shot-card reveal">
+          <div class="phone-frame" role="button" tabindex="0" data-shot="1000116011.jpg" data-caption="Список чатов, категории, боты и нижняя панель навигации">
+            <div class="phone-notch"><span class="phone-cam"></span></div>
+            <div class="phone-screen">
+              <img src="1000116011.jpg" alt="Экран списка чатов blisschat в смартфоне" loading="lazy">
+            </div>
+            <div class="phone-home"></div>
+          </div>
+          <div>
+            <p class="shot-title">Лента чатов</p>
+            <p class="shot-desc">Поиск, категории, каналы и боты</p>
+          </div>
+        </div>
+
+        <div class="shot-card reveal">
+          <div class="phone-frame" role="button" tabindex="0" data-shot="1000116013.jpg" data-caption="Личный диалог с закреплённым зашифрованным сообщением, ответами и реакциями">
+            <div class="phone-notch"><span class="phone-cam"></span></div>
+            <div class="phone-screen">
+              <img src="1000116013.jpg" alt="Экран личного чата blisschat в смартфоне" loading="lazy">
+            </div>
+            <div class="phone-home"></div>
+          </div>
+          <div>
+            <p class="shot-title">Диалог и шифр</p>
+            <p class="shot-desc">Закрепы, ответы, реакции и звонки</p>
+          </div>
+        </div>
+
+        <div class="shot-card reveal">
+          <div class="phone-frame" role="button" tabindex="0" data-shot="1000116015.jpg" data-caption="Профиль пользователя с аватаркой, значками и вкладками фото, видео и сообщений">
+            <div class="phone-notch"><span class="phone-cam"></span></div>
+            <div class="phone-screen">
+              <img src="1000116015.jpg" alt="Экран профиля пользователя blisschat в смартфоне" loading="lazy">
+            </div>
+            <div class="phone-home"></div>
+          </div>
+          <div>
+            <p class="shot-title">Профиль и медиа</p>
+            <p class="shot-desc">Значки, био и вложения по вкладкам</p>
+          </div>
+        </div>
+
+        <div class="shot-card reveal">
+          <div class="phone-frame" role="button" tabindex="0" data-shot="1000116017.jpg" data-caption="Настройки: внешний вид, уведомления, приватность, секретные ключи, плагины и стикеры">
+            <div class="phone-notch"><span class="phone-cam"></span></div>
+            <div class="phone-screen">
+              <img src="1000116017.jpg" alt="Экран настроек blisschat в смартфоне" loading="lazy">
+            </div>
+            <div class="phone-home"></div>
+          </div>
+          <div>
+            <p class="shot-title">Гибкие настройки</p>
+            <p class="shot-desc">Цвета, ключи, плагины и стикеры</p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section>
-      <h2>Как установить</h2>
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>Что внутри</h2>
+        <p class="sec-sub">Всё для быстрой и приватной переписки</p>
+      </div>
+      <div class="feat">
+        <div class="f reveal">
+          <span class="f-badge">Безопасность</span>
+          <h3>Сквозное шифрование</h3>
+          <p>Сообщения, фото и звонки шифруются на вашем телефоне. Сервер видит только набор непонятных символов.</p>
+        </div>
+        <div class="f reveal">
+          <span class="f-badge">Связь</span>
+          <h3>Аудио и видеозвонки</h3>
+          <p>Прямое соединение между телефонами. Микрофон, динамик, смена камеры, завершение вызова.</p>
+        </div>
+        <div class="f reveal">
+          <span class="f-badge">Чаты</span>
+          <h3>Группы и значки</h3>
+          <p>Галочки доставки и прочтения, реакции, удаление у всех или только у себя, значки верификации.</p>
+        </div>
+        <div class="f reveal">
+          <span class="f-badge">Персонализация</span>
+          <h3>Ваш цвет</h3>
+          <p>Один ползунок меняет акценты и свечение фона по всему спектру, от красного до фиолетового.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>Как установить</h2>
+        <p class="sec-sub">Три простых шага на Android</p>
+      </div>
       <ol>
-        <li><div><b>Скачайте файл</b><span>Нажмите кнопку выше. Телефон сохранит app-debug.apk в загрузки.</span></div></li>
-        <li><div><b>Разрешите установку</b><span>Если Android спросит, включите «Установка из неизвестных источников» для браузера, которым скачали файл.</span></div></li>
-        <li><div><b>Откройте файл и войдите</b><span>Нажмите «Установить», затем войдите по email или через Google.</span></div></li>
+        <li class="reveal"><div><b>Скачайте файл</b><span>Нажмите кнопку выше. Телефон сохранит app-debug.apk в загрузки.</span></div></li>
+        <li class="reveal"><div><b>Разрешите установку</b><span>Если Android спросит, включите «Установка из неизвестных источников» для браузера, которым скачали файл.</span></div></li>
+        <li class="reveal"><div><b>Откройте файл и войдите</b><span>Нажмите «Установить», затем войдите по email или через Google.</span></div></li>
       </ol>
     </section>
 
-    <section>
-      <h2>Частые вопросы</h2>
-      <details><summary>Почему Android предупреждает об установке?</summary><p>Приложение ставится напрямую из файла, а не из магазина, поэтому система просит подтверждение. Предупреждение появляется для всех APK вне Google Play.</p></details>
-      <details><summary>Что с чатами после смены телефона?</summary><p>Ключ шифрования хранится только на устройстве. На новом телефоне создаётся новый ключ, и старая переписка на нём не откроется.</p></details>
-      <details><summary>Придёт ли уведомление о звонке?</summary><p>Пока нет. Входящий звонок звонит, только когда приложение открыто.</p></details>
-      <details>
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>Частые вопросы</h2>
+        <p class="sec-sub">Коротко о работе приложения</p>
+      </div>
+      <details class="reveal"><summary>Почему Android предупреждает об установке?</summary><p>Приложение ставится напрямую из файла, а не из магазина, поэтому система просит подтверждение. Предупреждение появляется для всех APK вне Google Play.</p></details>
+      <details class="reveal"><summary>Что с чатами после смены телефона?</summary><p>Ключ шифрования хранится только на устройстве. На новом телефоне создаётся новый ключ, и старая переписка на нём не откроется.</p></details>
+      <details class="reveal"><summary>Придёт ли уведомление о звонке?</summary><p>Пока нет. Входящий звонок звонит, только когда приложение открыто.</p></details>
+      <details class="reveal">
         <summary>Как проверить, что файл не подменён?</summary>
         <p>Контрольная сумма SHA-256 файла app-debug.apk:</p>
         <div class="hash-box">
@@ -166,11 +467,21 @@
           <button class="copy-btn" id="copySha" type="button">Копировать</button>
         </div>
       </details>
-      <details><summary>Есть ли версия для iPhone?</summary><p>Нет, blisschat работает только на Android.</p></details>
+      <details class="reveal"><summary>Есть ли версия для iPhone?</summary><p>Нет, blisschat работает только на Android.</p></details>
     </section>
 
-    <footer>blisschat · Material You · Nunito</footer>
+    <footer class="reveal">blisschat · Material You · Nunito</footer>
   </main>
+
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр скриншота">
+    <div class="lightbox-box">
+      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Закрыть">✕</button>
+      <div class="phone-screen">
+        <img id="lightboxImg" src="" alt="">
+      </div>
+      <p class="lightbox-caption" id="lightboxCaption"></p>
+    </div>
+  </div>
 
   <script>
     const GH_OWNER = "tamirlanmarkaba1-beep";
@@ -218,6 +529,68 @@
 
     syncReleaseFromGithub();
 
+    // Плавное выдвижение + размытие при прокрутке
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealEls = document.querySelectorAll(".reveal");
+
+    if (prefersReduced || !("IntersectionObserver" in window)) {
+      revealEls.forEach(el => el.classList.add("is-visible"));
+    } else {
+      const revealObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach((entry, idx) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              entry.target.classList.add("is-visible");
+            }, idx * 55);
+            obs.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: "0px 0px -30px 0px"
+      });
+
+      revealEls.forEach(el => revealObserver.observe(el));
+    }
+
+    // Плавный 3D-поворот телефонов при наведении и ведении курсора/пальца
+    document.querySelectorAll(".phone-frame").forEach(frame => {
+      if (prefersReduced) return;
+
+      const maxTilt = 16;
+
+      function setTilt(clientX, clientY) {
+        const rect = frame.getBoundingClientRect();
+        const px = (clientX - rect.left) / rect.width;   // 0..1
+        const py = (clientY - rect.top) / rect.height;   // 0..1
+        const ry = (px - 0.5) * maxTilt * 2;
+        const rx = (0.5 - py) * maxTilt * 2;
+
+        frame.classList.add("is-tilting");
+        frame.style.setProperty("--rx", `${rx.toFixed(2)}deg`);
+        frame.style.setProperty("--ry", `${ry.toFixed(2)}deg`);
+        frame.style.setProperty("--lift", "-6px");
+        frame.style.setProperty("--sc", "1.03");
+      }
+
+      function resetTilt() {
+        frame.classList.remove("is-tilting");
+        frame.style.setProperty("--rx", "0deg");
+        frame.style.setProperty("--ry", "0deg");
+        frame.style.setProperty("--lift", "0px");
+        frame.style.setProperty("--sc", "1");
+      }
+
+      frame.addEventListener("pointermove", e => {
+        if (e.pointerType === "mouse" || e.pointerType === "pen") {
+          setTilt(e.clientX, e.clientY);
+        }
+      });
+
+      frame.addEventListener("pointerleave", resetTilt);
+      frame.addEventListener("pointercancel", resetTilt);
+    });
+
     // Переключатель темы с сохранением в localStorage
     const root = document.documentElement;
     const themeToggle = document.getElementById("themeToggle");
@@ -244,6 +617,45 @@
       const isDark = root.getAttribute("data-theme") === "dark" ||
         (!root.hasAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
       applyTheme(isDark ? "light" : "dark");
+    });
+
+    // Просмотр скриншотов в лайтбоксе
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightboxImg");
+    const lightboxCaption = document.getElementById("lightboxCaption");
+    const lightboxClose = document.getElementById("lightboxClose");
+
+    function openShot(frame) {
+      const src = frame.getAttribute("data-shot");
+      const cap = frame.getAttribute("data-caption") || "";
+      if (!src) return;
+      lightboxImg.src = src;
+      lightboxImg.alt = cap;
+      lightboxCaption.textContent = cap;
+      lightbox.hidden = false;
+    }
+
+    function closeShot() {
+      lightbox.hidden = true;
+      lightboxImg.src = "";
+    }
+
+    document.querySelectorAll(".phone-frame").forEach(frame => {
+      frame.addEventListener("click", () => openShot(frame));
+      frame.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openShot(frame);
+        }
+      });
+    });
+
+    lightboxClose.addEventListener("click", closeShot);
+    lightbox.addEventListener("click", e => {
+      if (e.target === lightbox) closeShot();
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !lightbox.hidden) closeShot();
     });
 
     // Копирование SHA-256
