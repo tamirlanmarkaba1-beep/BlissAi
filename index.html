@@ -14,7 +14,6 @@
       padding-top:env(safe-area-inset-top,0px);
       padding-bottom:env(safe-area-inset-bottom,0px);
 
-      /* Material 3 / Material You Light Tokens */
       --bg:#e8f5f1;
       --surface:#f4fbf8;
       --surface-low:#ebf6f2;
@@ -89,8 +88,15 @@
       color-scheme:light;
     }
 
-    html{scroll-padding-top:env(safe-area-inset-top,0px)}
-    *{box-sizing:border-box}
+    html{
+      scroll-padding-top:env(safe-area-inset-top,0px);
+      -webkit-text-size-adjust:100%;
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
 
     body{
       margin:0;
@@ -106,7 +112,14 @@
       position:relative;
     }
 
-    img{max-width:100%}
+    img{
+      max-width:100%;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+      -webkit-user-drag:none;
+    }
+
     [hidden]:not([hidden=until-found i]){display:none!important}
 
     .blob{position:absolute;z-index:0;pointer-events:none;border-radius:46% 54% 58% 42%/50% 44% 56% 50%}
@@ -124,11 +137,11 @@
     .reveal{
       opacity:0;
       transform:translateY(24px);
-      filter:blur(9px);
+      filter:blur(10px);
       transition:
         opacity .7s cubic-bezier(.22,1,.36,1),
         transform .8s cubic-bezier(.22,1,.36,1),
-        filter .9s cubic-bezier(.22,1,.36,1);
+        filter 1s cubic-bezier(.22,1,.36,1);
     }
     .reveal.is-visible{
       opacity:1;
@@ -136,7 +149,6 @@
       filter:blur(0);
     }
 
-    /* M3 Top Bar */
     .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
     .m3-chip{
       display:inline-flex;align-items:center;gap:8px;
@@ -155,13 +167,11 @@
     }
     .theme-btn:hover{transform:translateY(-1px)}
 
-    /* Hero */
     .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
     .mark{width:min(38vw,156px);height:auto;filter:drop-shadow(0 12px 20px #00474429)}
     h1{font-size:clamp(38px,8.5vw,60px);line-height:1.02;margin:4px 0 0;font-weight:900;letter-spacing:-.02em}
     .tag{max-width:32ch;margin:0;font-size:clamp(17px,3.6vw,20.5px);color:var(--muted);font-weight:600;text-wrap:balance}
 
-    /* M3 Chat Bubbles */
     .chat-strip{width:100%;max-width:500px;margin-top:4px;display:flex;flex-direction:column;gap:8px}
     .bubble{
       max-width:84%;padding:10px 15px;font-size:14px;font-weight:600;line-height:1.4;
@@ -179,7 +189,6 @@
     }
     .bubble-time{display:block;font-size:11px;opacity:.7;margin-top:2px;text-align:right}
 
-    /* M3 Extended FAB / Primary CTA */
     .cta{
       display:inline-flex;align-items:center;gap:11px;margin-top:10px;
       padding:16px 30px;border-radius:28px;
@@ -208,31 +217,28 @@
     h2{font-size:clamp(23px,4.8vw,28px);margin:0;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
     .sec-sub{margin:0;font-size:14px;color:var(--muted);font-weight:600}
 
-    /* 3D Смартфоны со слоями, выходящими наружу */
+    /* 3D Смартфоны со слоями самого скриншота, выходящими вперёд */
     .shots-grid{
       display:grid;
       grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:24px 18px;
+      gap:24px 16px;
       align-items:start;
-    }
-    @media (max-width:520px){
-      .shots-grid{
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-        gap:20px 12px;
-      }
     }
 
     .shot-item{
-      display:flex;flex-direction:column;align-items:center;gap:12px;
+      display:flex;flex-direction:column;align-items:center;gap:10px;
       text-align:center;
       min-width:0;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
     }
 
     .phone-stage{
       width:100%;
-      max-width:220px;
-      perspective:900px;
-      padding:8px 4px;
+      max-width:196px;
+      perspective:850px;
+      padding:10px 6px;
     }
 
     .phone-3d{
@@ -243,99 +249,83 @@
       position:relative;
       width:100%;
       background:var(--phone-frame);
-      border-radius:32px;
-      padding:8px;
+      border-radius:30px;
+      padding:7px;
       border:1.5px solid #ffffff26;
       box-shadow:var(--shadow);
       transform-style:preserve-3d;
       transform:rotateX(var(--rx)) rotateY(var(--ry));
-      transition:transform .45s cubic-bezier(.22,1,.36,1),box-shadow .35s ease;
       cursor:pointer;
+      -webkit-user-select:none;
       user-select:none;
-    }
-    .phone-3d.is-active{
-      transition:transform .09s ease-out,box-shadow .2s ease;
-      box-shadow:0 22px 42px #00000052;
+      -webkit-touch-callout:none;
+      touch-action:pan-y;
     }
 
-    /* Слой 1: сам экран */
-    .layer-screen{
+    .phone-base{
       position:relative;
-      border-radius:25px;
+      border-radius:23px;
       overflow:hidden;
       aspect-ratio:9 / 19.2;
       background:var(--surface-low);
-      transform:translateZ(10px);
+      transform:translateZ(6px);
     }
-    .layer-screen img{
-      width:100%;height:100%;
+
+    /* 3D слои самого фото: вырезанные зоны скриншота приподнимаются и выходят в 3D */
+    .photo-slice{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
       object-fit:cover;
-      display:block;
+      pointer-events:none;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+      -webkit-user-drag:none;
+    }
+
+    .slice-top{
+      z-index:2;
+      clip-path:inset(0% 0% 72% 0% round 22px 22px 6px 6px);
+      filter:drop-shadow(0 6px 10px #00000045);
+      transform:translate3d(calc(var(--px) * 1.1), calc(var(--py) * 1.1), 22px);
+    }
+
+    .slice-mid{
+      z-index:3;
+      clip-path:inset(28% 0% 34% 0% round 10px);
+      filter:drop-shadow(0 10px 16px #00000055);
+      transform:translate3d(calc(var(--px) * 2.0), calc(var(--py) * 2.0), 40px);
+    }
+
+    .slice-bottom{
+      z-index:4;
+      clip-path:inset(66% 0% 0% 0% round 6px 6px 22px 22px);
+      filter:drop-shadow(0 12px 18px #00000060);
+      transform:translate3d(calc(var(--px) * 2.8), calc(var(--py) * 2.8), 58px);
     }
 
     /* Фолбэк-интерфейс в Material You, если картинка ещё не загружена */
     .mock-ui{
       position:absolute;inset:0;
-      padding:12px 10px;
-      display:flex;flex-direction:column;gap:8px;
+      padding:10px 8px;
+      display:flex;flex-direction:column;gap:7px;
       background:linear-gradient(165deg, var(--surface-high), var(--surface-low));
     }
-    .mock-bar{height:10px;width:54%;border-radius:99px;background:var(--primary-container)}
+    .mock-bar{height:9px;width:54%;border-radius:99px;background:var(--primary-container)}
     .mock-row{
-      height:34px;border-radius:14px;
+      height:30px;border-radius:12px;
       background:var(--surface);border:1px solid var(--line);
-      display:flex;align-items:center;gap:7px;padding:0 8px;
+      display:flex;align-items:center;gap:6px;padding:0 7px;
     }
-    .mock-ava{width:18px;height:18px;border-radius:99px;background:var(--primary);opacity:.85;flex:none}
+    .mock-ava{width:16px;height:16px;border-radius:99px;background:var(--primary);opacity:.85;flex:none}
     .mock-lines{flex:1;display:flex;flex-direction:column;gap:4px}
-    .mock-lines span{height:5px;border-radius:99px;background:var(--fg);opacity:.22}
+    .mock-lines span{height:4.5px;border-radius:99px;background:var(--fg);opacity:.22}
     .mock-lines span:last-child{width:65%;opacity:.14}
 
-    /* Слой 2: приподнятый M3-виджет поверх края телефона */
-    .layer-float-top{
-      position:absolute;
-      top:16px;
-      right:-10px;
-      z-index:4;
-      padding:6px 10px;
-      border-radius:16px;
-      background:var(--primary-container);
-      color:var(--on-primary-container);
-      border:1px solid var(--line);
-      font:800 10.5px/1.2 var(--font);
-      box-shadow:0 10px 22px #00000038;
-      transform:translate3d(calc(var(--px) * 1.4), calc(var(--py) * 1.4), 34px);
-      transition:transform .35s cubic-bezier(.22,1,.36,1);
-      pointer-events:none;
-      white-space:nowrap;
-    }
-
-    /* Слой 3: нижний выпирающий чип / пузырь, выходящий за рамку */
-    .layer-float-bottom{
-      position:absolute;
-      bottom:18px;
-      left:-12px;
-      z-index:5;
-      max-width:88%;
-      padding:7px 11px;
-      border-radius:18px 18px 18px 6px;
-      background:var(--surface-highest);
-      color:var(--fg);
-      border:1px solid var(--line);
-      font:700 10.5px/1.25 var(--font);
-      box-shadow:0 12px 24px #00000040;
-      transform:translate3d(calc(var(--px) * 2.1), calc(var(--py) * 2.1), 54px);
-      transition:transform .35s cubic-bezier(.22,1,.36,1);
-      pointer-events:none;
-    }
-
-    .phone-3d.is-active .layer-float-top,
-    .phone-3d.is-active .layer-float-bottom{
-      transition:transform .08s ease-out;
-    }
-
-    .shot-title{margin:0;font-size:15px;font-weight:800}
-    .shot-desc{margin:2px 0 0;font-size:13px;color:var(--muted)}
+    .shot-title{margin:0;font-size:14.5px;font-weight:800}
+    .shot-desc{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
 
     /* Лайтбокс */
     .lightbox{
@@ -344,13 +334,16 @@
       display:grid;place-items:center;padding:18px;
     }
     .lightbox-box{
-      position:relative;max-width:340px;width:100%;
+      position:relative;max-width:330px;width:100%;
       background:var(--phone-frame);border-radius:36px;padding:10px;
       border:1px solid var(--line);box-shadow:0 24px 54px #00000099;
       text-align:center;
     }
-    .lightbox-box .layer-screen{border-radius:28px}
-    .lightbox-caption{margin:10px 6px 2px;font-weight:700;font-size:14.5px;color:var(--fg)}
+    .lightbox-screen{
+      border-radius:28px;overflow:hidden;aspect-ratio:9/19.2;background:var(--surface-low);
+    }
+    .lightbox-screen img{width:100%;height:100%;object-fit:cover;display:block}
+    .lightbox-caption{margin:10px 6px 2px;font-weight:700;font-size:14px;color:var(--fg)}
     .lightbox-close{
       position:absolute;top:-12px;right:-12px;
       width:36px;height:36px;border-radius:50%;
@@ -467,25 +460,25 @@
 
     <section class="reveal">
       <div class="sec-head">
-        <h2>3D-экраны и слои</h2>
-        <p class="sec-sub">Поверните телефон — слои выйдут наружу</p>
+        <h2>3D-экраны по слоям</h2>
+        <p class="sec-sub">Слои фото выходят вперёд · Нажмите для просмотра</p>
       </div>
 
       <div class="shots-grid">
         <div class="shot-item reveal">
           <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-shot="Screenshot_20261125_105603_blisschat.jpg" data-caption="Лента чатов, категории, боты и нижняя панель">
-              <div class="layer-float-top">✦ Чаты и боты</div>
-              <div class="layer-screen">
-                <img src="Screenshot_20261125_105603_blisschat.jpg" alt="Лента чатов blisschat" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="0" data-shot="Screenshot_20261125_105603_blisschat.jpg" data-caption="Лента чатов, категории, боты и нижняя панель">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
                 <div class="mock-ui">
                   <div class="mock-bar"></div>
                   <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
                   <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
                 </div>
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
               </div>
-              <div class="layer-float-bottom">blisschat_bot · 08:57</div>
             </div>
           </div>
           <div>
@@ -496,18 +489,18 @@
 
         <div class="shot-item reveal">
           <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-shot="Screenshot_20261125_105658_blisschat.jpg" data-caption="Личный диалог с зашифрованным закрепом и реакциями">
-              <div class="layer-float-top">🔒 E2EE Чат</div>
-              <div class="layer-screen">
-                <img src="Screenshot_20261125_105658_blisschat.jpg" alt="Диалог в blisschat" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="1.5" data-shot="Screenshot_20261125_105658_blisschat.jpg" data-caption="Личный диалог с зашифрованным закрепом и реакциями">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
                 <div class="mock-ui">
                   <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
                   <div class="mock-bar" style="width:78%;margin-left:auto"></div>
                   <div class="mock-bar" style="width:72%"></div>
-                  <div class="mock-bar" style="width:60%;margin-left:auto"></div>
                 </div>
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
               </div>
-              <div class="layer-float-bottom">Закреплено · ✓✓</div>
             </div>
           </div>
           <div>
@@ -518,18 +511,18 @@
 
         <div class="shot-item reveal">
           <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-shot="Screenshot_20261125_105708_blisschat.jpg" data-caption="Профиль пользователя, значки и вкладки медиа">
-              <div class="layer-float-top">✓ Профиль</div>
-              <div class="layer-screen">
-                <img src="Screenshot_20261125_105708_blisschat.jpg" alt="Профиль в blisschat" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="3.1" data-shot="Screenshot_20261125_105708_blisschat.jpg" data-caption="Профиль пользователя, значки и вкладки медиа">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
                 <div class="mock-ui">
-                  <div class="mock-ava" style="width:42px;height:42px;margin:6px auto 2px"></div>
-                  <div class="mock-bar" style="width:65%;margin:0 auto"></div>
+                  <div class="mock-ava" style="width:36px;height:36px;margin:4px auto"></div>
                   <div class="mock-row" style="height:26px"><div class="mock-lines"><span></span></div></div>
-                  <div class="mock-row" style="height:44px"><div class="mock-lines"><span></span><span></span></div></div>
+                  <div class="mock-row" style="height:36px"><div class="mock-lines"><span></span><span></span></div></div>
                 </div>
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
               </div>
-              <div class="layer-float-bottom">Фото · Видео · Чаты</div>
             </div>
           </div>
           <div>
@@ -540,18 +533,18 @@
 
         <div class="shot-item reveal">
           <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-shot="Screenshot_20261125_105716_blisschat.jpg" data-caption="Настройки темы, ключей шифрования, плагинов и стикеров">
-              <div class="layer-float-top">🎨 Цвета M3</div>
-              <div class="layer-screen">
-                <img src="Screenshot_20261125_105716_blisschat.jpg" alt="Настройки blisschat" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="4.7" data-shot="Screenshot_20261125_105716_blisschat.jpg" data-caption="Настройки темы, ключей шифрования, плагинов и стикеров">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
                 <div class="mock-ui">
                   <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
                   <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
                   <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
                 </div>
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
               </div>
-              <div class="layer-float-bottom">Ключи · Плагины · Стикеры</div>
             </div>
           </div>
           <div>
@@ -628,8 +621,8 @@
   <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр скриншота">
     <div class="lightbox-box">
       <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Закрыть">✕</button>
-      <div class="layer-screen">
-        <img id="lightboxImg" src="" alt="">
+      <div class="lightbox-screen">
+        <img id="lightboxImg" src="" alt="" draggable="false">
       </div>
       <p class="lightbox-caption" id="lightboxCaption"></p>
     </div>
@@ -705,43 +698,91 @@
       revealEls.forEach(el => revealObserver.observe(el));
     }
 
-    // 3D-поворот телефонов и параллакс выходящих слоёв (мышь + касание)
-    document.querySelectorAll(".phone-3d").forEach(phone => {
+    // Авто-движение телефонов в 3D + плавный отклик на касание/курсор + выход слоёв фото
+    const phones = Array.from(document.querySelectorAll(".phone-3d"));
+    const phoneStates = phones.map(el => ({
+      el,
+      phase: parseFloat(el.getAttribute("data-phase") || "0"),
+      targetRx: 0,
+      targetRy: 0,
+      targetPx: 0,
+      targetPy: 0,
+      curRx: 0,
+      curRy: 0,
+      curPx: 0,
+      curPy: 0,
+      pointerActive: false,
+      pointerUntil: 0
+    }));
+
+    phones.forEach((phone, idx) => {
       if (prefersReduced) return;
+      const st = phoneStates[idx];
 
-      const maxTilt = 15;
-      const maxShift = 7;
-
-      function applyPose(clientX, clientY) {
+      function updateFromPointer(clientX, clientY) {
         const rect = phone.getBoundingClientRect();
         const nx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
         const ny = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-
-        const ry = (nx - 0.5) * maxTilt * 2;
-        const rx = (0.5 - ny) * maxTilt * 2;
-        const px = (nx - 0.5) * maxShift * 2;
-        const py = (ny - 0.5) * maxShift * 2;
-
-        phone.classList.add("is-active");
-        phone.style.setProperty("--rx", `${rx.toFixed(2)}deg`);
-        phone.style.setProperty("--ry", `${ry.toFixed(2)}deg`);
-        phone.style.setProperty("--px", `${px.toFixed(1)}px`);
-        phone.style.setProperty("--py", `${py.toFixed(1)}px`);
+        st.targetRy = (nx - 0.5) * 28;
+        st.targetRx = (0.5 - ny) * 28;
+        st.targetPx = (nx - 0.5) * 10;
+        st.targetPy = (ny - 0.5) * 10;
+        st.pointerActive = true;
+        st.pointerUntil = performance.now() + 1400;
       }
 
-      function resetPose() {
-        phone.classList.remove("is-active");
-        phone.style.setProperty("--rx", "0deg");
-        phone.style.setProperty("--ry", "0deg");
-        phone.style.setProperty("--px", "0px");
-        phone.style.setProperty("--py", "0px");
-      }
-
-      phone.addEventListener("pointermove", e => applyPose(e.clientX, e.clientY));
-      phone.addEventListener("pointerdown", e => applyPose(e.clientX, e.clientY));
-      phone.addEventListener("pointerleave", resetPose);
-      phone.addEventListener("pointercancel", resetPose);
+      phone.addEventListener("pointermove", e => updateFromPointer(e.clientX, e.clientY));
+      phone.addEventListener("pointerdown", e => updateFromPointer(e.clientX, e.clientY));
+      phone.addEventListener("pointerup", () => {
+        st.pointerActive = false;
+      });
+      phone.addEventListener("pointerleave", () => {
+        st.pointerActive = false;
+      });
+      phone.addEventListener("pointercancel", () => {
+        st.pointerActive = false;
+      });
     });
+
+    if (!prefersReduced && phoneStates.length) {
+      let startTs = null;
+      function animatePhones(ts) {
+        if (startTs === null) startTs = ts;
+        const t = (ts - startTs) / 1000;
+
+        for (const st of phoneStates) {
+          const usePointer = st.pointerActive || ts < st.pointerUntil;
+          let goalRx, goalRy, goalPx, goalPy;
+
+          if (usePointer) {
+            goalRx = st.targetRx;
+            goalRy = st.targetRy;
+            goalPx = st.targetPx;
+            goalPy = st.targetPy;
+          } else {
+            const waveX = Math.sin(t * 1.15 + st.phase);
+            const waveY = Math.cos(t * 0.9 + st.phase * 0.8);
+            goalRy = waveX * 13;
+            goalRx = waveY * 10;
+            goalPx = waveX * 5.5;
+            goalPy = waveY * 4.5;
+          }
+
+          st.curRx += (goalRx - st.curRx) * 0.08;
+          st.curRy += (goalRy - st.curRy) * 0.08;
+          st.curPx += (goalPx - st.curPx) * 0.08;
+          st.curPy += (goalPy - st.curPy) * 0.08;
+
+          st.el.style.setProperty("--rx", `${st.curRx.toFixed(2)}deg`);
+          st.el.style.setProperty("--ry", `${st.curRy.toFixed(2)}deg`);
+          st.el.style.setProperty("--px", `${st.curPx.toFixed(2)}px`);
+          st.el.style.setProperty("--py", `${st.curPy.toFixed(2)}px`);
+        }
+
+        requestAnimationFrame(animatePhones);
+      }
+      requestAnimationFrame(animatePhones);
+    }
 
     // Тема M3 с сохранением в localStorage
     const root = document.documentElement;
@@ -792,7 +833,7 @@
       lightboxImg.src = "";
     }
 
-    document.querySelectorAll(".phone-3d").forEach(phone => {
+    phones.forEach(phone => {
       phone.addEventListener("click", () => openShot(phone));
       phone.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " ") {
