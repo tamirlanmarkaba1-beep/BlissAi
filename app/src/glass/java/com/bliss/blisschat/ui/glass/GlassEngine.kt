@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposeRenderEffect
@@ -33,13 +34,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import android.graphics.RenderEffect as AndroidRenderEffect
 
-/**
- * Own liquid-glass engine (no third-party library: the free "Backdrop" library by Kyant0 needs Kotlin 2.3+/Compose 1.10+,
- * this project is on Kotlin 2.0 / Compose 1.7). It uses the same Android building blocks:
- *  - the picture behind the glass is recorded once into a [GraphicsLayer] ([glassSource]);
- *  - every panel ([glassPanel]) draws its own piece of that picture, blurred (RenderEffect, Android 12+) and
- *    bent at the edges by an AGSL shader that imitates a thick glass lens (Android 13+).
- */
 @Stable
 class GlassBackdrop(val layer: GraphicsLayer) {
     var origin: Offset by mutableStateOf(Offset.Zero)
@@ -51,7 +45,6 @@ fun rememberGlassBackdrop(): GlassBackdrop {
     return remember(layer) { GlassBackdrop(layer) }
 }
 
-/** Marks the content that panels should look through. Panels themselves must NOT be inside this content. */
 fun Modifier.glassSource(backdrop: GlassBackdrop): Modifier =
     this.onGloballyPositioned { backdrop.origin = it.positionInRoot() }
         .drawWithContent {
@@ -64,10 +57,10 @@ fun Modifier.glassSource(backdrop: GlassBackdrop): Modifier =
 private class Preset(val blurDp: Float, val saturation: Float, val refractHeightDp: Float, val refractAmountDp: Float, val chroma: Boolean, val rim: Float)
 
 private val PRESETS = listOf(
-    Preset(0f, 1f, 0f, 0f, false, 0.35f),          // LOW  (not used for blur)
-    Preset(18f, 1.35f, 0f, 0f, false, 0.45f),      // HIGH
-    Preset(10f, 1.5f, 14f, 16f, false, 0.55f),     // ULTRA
-    Preset(7f, 1.7f, 26f, 34f, true, 0.7f)         // EXTREME
+    Preset(0f, 1f, 0f, 0f, false, 0.35f),
+    Preset(18f, 1.35f, 0f, 0f, false, 0.45f),
+    Preset(10f, 1.5f, 14f, 16f, false, 0.55f),
+    Preset(7f, 1.7f, 26f, 34f, true, 0.7f)
 )
 
 private const val LENS = """
@@ -104,6 +97,12 @@ half4 main(float2 coord) {
 }
 """
 
+private fun outlinePath(o: Outline): Path = when (o) {
+    is Outline.Rectangle -> Path().apply { addRect(o.rect) }
+    is Outline.Rounded -> Path().apply { addRoundRect(o.roundRect) }
+    is Outline.Generic -> o.path
+}
+
 private fun levelOf(q: GlassQuality): Int {
     val sdk = Build.VERSION.SDK_INT
     return when {
@@ -133,15 +132,11 @@ private fun effectFor(level: Int, density: Float, w: Float, h: Float, cornerPx: 
     return e.asComposeRenderEffect()
 }
 
-/**
- * A piece of glass: blurs / bends what [glassSource] shows behind it, then paints [tint] and a bright rim.
- * [corner] is the radius of the lens edge (use a big value for pills and circles).
- */
 fun Modifier.glassPanel(backdrop: GlassBackdrop, shape: Shape, quality: GlassQuality, tint: Color, corner: Dp = 28.dp): Modifier = composed {
     val layer = rememberGraphicsLayer()
     var pos by remember { mutableStateOf(Offset.Zero) }
     val level = levelOf(quality)
-    this
+    val result: Modifier = this
         .onGloballyPositioned { pos = it.positionInRoot() }
         .drawWithContent {
             val w = size.width
@@ -155,10 +150,10 @@ fun Modifier.glassPanel(backdrop: GlassBackdrop, shape: Shape, quality: GlassQua
                 layer.record(this, layoutDirection, IntSize(w.toInt(), h.toInt())) {
                     translate(-dx, -dy) { drawLayer(backdrop.layer) }
                 }
-                val path = Path().apply { addOutline(outline) }
+                val path = outlinePath(outline)
                 clipPath(path) { drawLayer(layer) }
             }
-            val shapePath = Path().apply { addOutline(outline) }
+            val shapePath = outlinePath(outline)
             drawPath(shapePath, color = tint)
             drawContent()
             val rim = PRESETS[level].rim
@@ -171,4 +166,5 @@ fun Modifier.glassPanel(backdrop: GlassBackdrop, shape: Shape, quality: GlassQua
                 style = Stroke(width = 1.3f * density)
             )
         }
+    result
 }
