@@ -13,415 +13,103 @@
       box-sizing:border-box;
       padding-top:env(safe-area-inset-top,0px);
       padding-bottom:env(safe-area-inset-bottom,0px);
-
-      --bg:#e8f5f1;
-      --surface:#f4fbf8;
-      --surface-low:#ebf6f2;
-      --surface-high:#dfefea;
-      --surface-highest:#d3e7e1;
-      --blob1:#bde6dc;
-      --blob2:#9fd9cb;
-      --fg:#0b2625;
-      --muted:#3c5e5c;
-      --primary:#006a66;
-      --on-primary:#ffffff;
-      --primary-container:#9cf1ec;
-      --on-primary-container:#00201f;
-      --secondary-container:#cde8e3;
-      --on-secondary-container:#0a2623;
-      --red:#a91410;
-      --line:#006a6624;
-      --phone-frame:#182423;
-      --shadow:0 14px 30px #0047441c;
+      --bg:#d9f3ec; --blob1:#c8eae9; --blob2:#a2e0d1; --fg:#0c2b2a; --muted:#3f6361;
+      --accent:#0e6c6c; --accent-fg:#ffffff; --red:#a91410; --card:#ffffffb8; --line:#0e6c6c26;
       --font:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     }
-
     @media (prefers-color-scheme:dark){
       :root:not([data-theme="light"]){
         color-scheme:dark;
-        --bg:#0d1514;
-        --surface:#121c1b;
-        --surface-low:#172322;
-        --surface-high:#1e2d2b;
-        --surface-highest:#263836;
-        --blob1:#123431;
-        --blob2:#17453f;
-        --fg:#e2f3ef;
-        --muted:#98b8b3;
-        --primary:#6ce0d5;
-        --on-primary:#003734;
-        --primary-container:#00504c;
-        --on-primary-container:#9cf1ec;
-        --secondary-container:#1e3633;
-        --on-secondary-container:#cde8e3;
-        --red:#ff766a;
-        --line:#6ce0d52b;
-        --phone-frame:#253735;
-        --shadow:0 16px 36px #00000066;
+        --bg:#0b1110; --blob1:#10302e; --blob2:#14403a; --fg:#e4f4f0; --muted:#9bbab5;
+        --accent:#58d3c4; --accent-fg:#06201d; --red:#ff6b5e; --card:#16221fcc; --line:#58d3c433;
       }
     }
-
     :root[data-theme="dark"]{
       color-scheme:dark;
-      --bg:#0d1514;
-      --surface:#121c1b;
-      --surface-low:#172322;
-      --surface-high:#1e2d2b;
-      --surface-highest:#263836;
-      --blob1:#123431;
-      --blob2:#17453f;
-      --fg:#e2f3ef;
-      --muted:#98b8b3;
-      --primary:#6ce0d5;
-      --on-primary:#003734;
-      --primary-container:#00504c;
-      --on-primary-container:#9cf1ec;
-      --secondary-container:#1e3633;
-      --on-secondary-container:#cde8e3;
-      --red:#ff766a;
-      --line:#6ce0d52b;
-      --phone-frame:#253735;
-      --shadow:0 16px 36px #00000066;
+      --bg:#0b1110; --blob1:#10302e; --blob2:#14403a; --fg:#e4f4f0; --muted:#9bbab5;
+      --accent:#58d3c4; --accent-fg:#06201d; --red:#ff6b5e; --card:#16221fcc; --line:#58d3c433;
     }
-
     :root[data-theme="light"]{
       color-scheme:light;
     }
-
-    html{
-      scroll-padding-top:env(safe-area-inset-top,0px);
-      -webkit-text-size-adjust:100%;
-    }
-
-    *{
-      box-sizing:border-box;
-      -webkit-tap-highlight-color:transparent;
-    }
-
+    html{scroll-padding-top:env(safe-area-inset-top,0px)}
+    *{box-sizing:border-box}
     body{
       margin:0;
-      background:var(--bg);
-      color:var(--fg);
-      font-family:var(--font);
-      font-size:16.5px;
-      line-height:1.55;
-      padding-left:max(14px,env(safe-area-inset-left,0px));
-      padding-right:max(14px,env(safe-area-inset-right,0px));
-      padding-block:0;
-      overflow-x:hidden;
-      position:relative;
+      background:var(--bg);color:var(--fg);font-family:var(--font);font-size:17px;line-height:1.55;
+      padding-left:max(16px,env(safe-area-inset-left,0px));
+      padding-right:max(16px,env(safe-area-inset-right,0px));
+      padding-block:0;overflow-x:hidden;position:relative;
     }
-
-    img{
-      max-width:100%;
-      -webkit-user-select:none;
-      user-select:none;
-      -webkit-touch-callout:none;
-      -webkit-user-drag:none;
-    }
-
+    img{max-width:100%}
     [hidden]:not([hidden=until-found i]){display:none!important}
-
     .blob{position:absolute;z-index:0;pointer-events:none;border-radius:46% 54% 58% 42%/50% 44% 56% 50%}
-    .b1{width:min(76vw,580px);aspect-ratio:1;background:var(--blob1);top:-16vw;left:-14vw;rotate:-12deg}
-    .b2{width:min(68vw,500px);aspect-ratio:1;background:var(--blob2);top:360px;right:-20vw;rotate:20deg}
-
-    main{
-      position:relative;z-index:1;
-      max-width:760px;margin:0 auto;
-      padding-block:24px 44px;
-      display:flex;flex-direction:column;gap:48px;
-    }
-
-    /* Плавное выдвижение + секундное размытие при прокрутке */
-    .reveal{
-      opacity:0;
-      transform:translateY(24px);
-      filter:blur(10px);
-      transition:
-        opacity .7s cubic-bezier(.22,1,.36,1),
-        transform .8s cubic-bezier(.22,1,.36,1),
-        filter 1s cubic-bezier(.22,1,.36,1);
-    }
-    .reveal.is-visible{
-      opacity:1;
-      transform:translateY(0);
-      filter:blur(0);
-    }
-
-    .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .m3-chip{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 14px;border-radius:999px;
-      background:var(--surface-high);border:1px solid var(--line);
-      color:var(--on-secondary-container);font:700 13px var(--font);
-    }
-    .dot{width:8px;height:8px;border-radius:50%;background:var(--primary)}
-
+    .b1{width:min(80vw,620px);aspect-ratio:1;background:var(--blob1);top:-18vw;left:-14vw;rotate:-12deg}
+    .b2{width:min(70vw,520px);aspect-ratio:1;background:var(--blob2);top:300px;right:-22vw;rotate:20deg}
+    main{position:relative;z-index:1;max-width:720px;margin:0 auto;padding-block:28px 40px;display:flex;flex-direction:column;gap:52px}
+    .topbar{display:flex;justify-content:flex-end}
     .theme-btn{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 16px;border-radius:999px;
-      background:var(--primary-container);border:1px solid var(--line);
-      color:var(--on-primary-container);font:800 13.5px var(--font);
-      cursor:pointer;transition:transform .16s ease,background .2s ease;
+      display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;
+      background:var(--card);border:1px solid var(--line);color:var(--fg);
+      font:700 14px var(--font);cursor:pointer;transition:transform .15s ease;
     }
     .theme-btn:hover{transform:translateY(-1px)}
-
     .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
-    .mark{width:min(38vw,156px);height:auto;filter:drop-shadow(0 12px 20px #00474429)}
-    h1{font-size:clamp(38px,8.5vw,60px);line-height:1.02;margin:4px 0 0;font-weight:900;letter-spacing:-.02em}
-    .tag{max-width:32ch;margin:0;font-size:clamp(17px,3.6vw,20.5px);color:var(--muted);font-weight:600;text-wrap:balance}
-
-    .chat-strip{width:100%;max-width:500px;margin-top:4px;display:flex;flex-direction:column;gap:8px}
-    .bubble{
-      max-width:84%;padding:10px 15px;font-size:14px;font-weight:600;line-height:1.4;
-      box-shadow:0 4px 14px #00000010;
-    }
-    .bubble-in{
-      align-self:flex-start;
-      background:var(--surface-high);color:var(--fg);
-      border:1px solid var(--line);border-radius:20px 20px 20px 6px;
-    }
-    .bubble-out{
-      align-self:flex-end;
-      background:var(--primary-container);color:var(--on-primary-container);
-      border-radius:20px 20px 6px 20px;
-    }
-    .bubble-time{display:block;font-size:11px;opacity:.7;margin-top:2px;text-align:right}
-
+    .mark{width:min(46vw,190px);height:auto;filter:drop-shadow(0 14px 22px #0e6c6c33)}
+    h1{font-size:clamp(40px,9vw,64px);line-height:1;margin:6px 0 0;font-weight:900;letter-spacing:-.02em}
+    .tag{max-width:30ch;margin:0;font-size:clamp(18px,3.8vw,22px);color:var(--muted);font-weight:600;text-wrap:balance}
     .cta{
-      display:inline-flex;align-items:center;gap:11px;margin-top:10px;
-      padding:16px 30px;border-radius:28px;
-      background:var(--primary);color:var(--on-primary);
-      font:800 18px var(--font);text-decoration:none;
-      transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .2s;
-      box-shadow:0 10px 24px #006a6638;
+      display:inline-flex;align-items:center;gap:12px;margin-top:14px;padding:18px 34px;border-radius:999px;
+      background:var(--accent);color:var(--accent-fg);font:800 19px var(--font);text-decoration:none;
+      transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .2s;box-shadow:0 10px 24px #0e6c6c40;
     }
-    .cta:hover{transform:translateY(-2px)}
-    .cta:active{transform:scale(.97);border-radius:20px}
+    .cta:hover{transform:translateY(-2px) scale(1.03)}
+    .cta:active{transform:scale(.97)}
     .cta:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid var(--red);outline-offset:3px}
-    .cta svg{width:22px;height:22px}
-
-    .meta{
-      font-size:13.5px;color:var(--muted);font-weight:700;
-      display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;
-      margin:0;padding:0;list-style:none;
-    }
-    .meta li+li::before{content:"·";margin-right:14px}
-    .notice{
-      background:var(--surface-high);border:1px solid var(--line);
-      border-radius:24px;padding:12px 16px;font-size:14.5px;color:var(--muted);text-align:center;
-    }
-
-    .sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:16px}
-    h2{font-size:clamp(23px,4.8vw,28px);margin:0;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
-    .sec-sub{margin:0;font-size:14px;color:var(--muted);font-weight:600}
-
-    /* 3D Смартфоны со слоями самого скриншота, выходящими вперёд */
-    .shots-grid{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:24px 16px;
-      align-items:start;
-    }
-
-    .shot-item{
-      display:flex;flex-direction:column;align-items:center;gap:10px;
-      text-align:center;
-      min-width:0;
-      -webkit-user-select:none;
-      user-select:none;
-      -webkit-touch-callout:none;
-    }
-
-    .phone-stage{
-      width:100%;
-      max-width:196px;
-      perspective:850px;
-      padding:10px 6px;
-    }
-
-    .phone-3d{
-      --rx:0deg;
-      --ry:0deg;
-      --px:0px;
-      --py:0px;
-      position:relative;
-      width:100%;
-      background:var(--phone-frame);
-      border-radius:30px;
-      padding:7px;
-      border:1.5px solid #ffffff26;
-      box-shadow:var(--shadow);
-      transform-style:preserve-3d;
-      transform:rotateX(var(--rx)) rotateY(var(--ry));
-      cursor:pointer;
-      -webkit-user-select:none;
-      user-select:none;
-      -webkit-touch-callout:none;
-      touch-action:pan-y;
-    }
-
-    .phone-base{
-      position:relative;
-      border-radius:23px;
-      overflow:hidden;
-      aspect-ratio:9 / 19.2;
-      background:var(--surface-low);
-      transform:translateZ(6px);
-    }
-
-    /* 3D слои самого фото: вырезанные зоны скриншота приподнимаются и выходят в 3D */
-    .photo-slice{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      pointer-events:none;
-      -webkit-user-select:none;
-      user-select:none;
-      -webkit-touch-callout:none;
-      -webkit-user-drag:none;
-    }
-
-    .slice-top{
-      z-index:2;
-      clip-path:inset(0% 0% 72% 0% round 22px 22px 6px 6px);
-      filter:drop-shadow(0 6px 10px #00000045);
-      transform:translate3d(calc(var(--px) * 1.1), calc(var(--py) * 1.1), 22px);
-    }
-
-    .slice-mid{
-      z-index:3;
-      clip-path:inset(28% 0% 34% 0% round 10px);
-      filter:drop-shadow(0 10px 16px #00000055);
-      transform:translate3d(calc(var(--px) * 2.0), calc(var(--py) * 2.0), 40px);
-    }
-
-    .slice-bottom{
-      z-index:4;
-      clip-path:inset(66% 0% 0% 0% round 6px 6px 22px 22px);
-      filter:drop-shadow(0 12px 18px #00000060);
-      transform:translate3d(calc(var(--px) * 2.8), calc(var(--py) * 2.8), 58px);
-    }
-
-    /* Фолбэк-интерфейс в Material You, если картинка ещё не загружена */
-    .mock-ui{
-      position:absolute;inset:0;
-      padding:10px 8px;
-      display:flex;flex-direction:column;gap:7px;
-      background:linear-gradient(165deg, var(--surface-high), var(--surface-low));
-    }
-    .mock-bar{height:9px;width:54%;border-radius:99px;background:var(--primary-container)}
-    .mock-row{
-      height:30px;border-radius:12px;
-      background:var(--surface);border:1px solid var(--line);
-      display:flex;align-items:center;gap:6px;padding:0 7px;
-    }
-    .mock-ava{width:16px;height:16px;border-radius:99px;background:var(--primary);opacity:.85;flex:none}
-    .mock-lines{flex:1;display:flex;flex-direction:column;gap:4px}
-    .mock-lines span{height:4.5px;border-radius:99px;background:var(--fg);opacity:.22}
-    .mock-lines span:last-child{width:65%;opacity:.14}
-
-    .shot-title{margin:0;font-size:14.5px;font-weight:800}
-    .shot-desc{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
-
-    /* Лайтбокс */
-    .lightbox{
-      position:fixed;inset:0;z-index:100;
-      background:#060d0ce0;backdrop-filter:blur(8px);
-      display:grid;place-items:center;padding:18px;
-    }
-    .lightbox-box{
-      position:relative;max-width:330px;width:100%;
-      background:var(--phone-frame);border-radius:36px;padding:10px;
-      border:1px solid var(--line);box-shadow:0 24px 54px #00000099;
-      text-align:center;
-    }
-    .lightbox-screen{
-      border-radius:28px;overflow:hidden;aspect-ratio:9/19.2;background:var(--surface-low);
-    }
-    .lightbox-screen img{width:100%;height:100%;object-fit:cover;display:block}
-    .lightbox-caption{margin:10px 6px 2px;font-weight:700;font-size:14px;color:var(--fg)}
-    .lightbox-close{
-      position:absolute;top:-12px;right:-12px;
-      width:36px;height:36px;border-radius:50%;
-      border:none;background:var(--primary);color:var(--on-primary);
-      font:800 16px var(--font);cursor:pointer;display:grid;place-items:center;
-    }
-
-    /* Material You Cards */
+    .cta svg{width:24px;height:24px}
+    .meta{font-size:14px;color:var(--muted);font-weight:600;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;margin:0;padding:0;list-style:none}
+    .meta li+li::before{content:"·";margin-right:16px}
+    .notice{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 18px;font-size:15px;color:var(--muted);text-align:center}
+    h2{font-size:clamp(24px,5vw,30px);margin:0 0 18px;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
     .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
-    .f{
-      background:var(--surface-low);border:1px solid var(--line);
-      padding:20px 22px;border-radius:28px;min-width:0;
-    }
-    .f-badge{
-      display:inline-block;padding:4px 11px;border-radius:999px;
-      background:var(--secondary-container);color:var(--on-secondary-container);
-      font-size:12px;font-weight:800;margin-bottom:8px;
-    }
+    .f{background:var(--card);border:1px solid var(--line);padding:20px 22px;border-radius:30px 30px 30px 10px;min-width:0}
+    .f:nth-child(even){border-radius:30px 30px 10px 30px}
     .f h3{margin:0 0 4px;font-size:18px;font-weight:800}
-    .f p{margin:0;color:var(--muted);font-size:15.5px}
-
-    /* Steps */
+    .f p{margin:0;color:var(--muted);font-size:16px}
     ol{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:s}
-    ol li{
-      counter-increment:s;display:flex;gap:15px;align-items:flex-start;
-      background:var(--surface-low);border:1px solid var(--line);
-      border-radius:24px;padding:16px 18px;min-width:0;
-    }
-    ol li::before{
-      content:counter(s);flex:none;width:36px;height:36px;border-radius:14px;
-      background:var(--primary-container);color:var(--on-primary-container);
-      display:grid;place-items:center;font-weight:900;
-    }
+    ol li{counter-increment:s;display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:16px 20px;min-width:0}
+    ol li::before{content:counter(s);flex:none;width:36px;height:36px;border-radius:44% 56% 52% 48%/50% 46% 54% 50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:900}
     ol b{display:block;font-weight:800}
-    ol span{color:var(--muted);font-size:15.5px}
-
-    /* FAQ */
-    details{
-      background:var(--surface-low);border:1px solid var(--line);
-      border-radius:24px;padding:14px 18px;
-    }
+    ol span{color:var(--muted);font-size:16px}
+    details{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 20px}
     details+details{margin-top:10px}
-    details[open]{background:var(--surface-high)}
     summary{cursor:pointer;font-weight:800}
-    details p{margin:10px 0 0;color:var(--muted);font-size:15.5px}
+    details p{margin:10px 0 0;color:var(--muted);font-size:16px}
     .hash-box{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
     .hash-code{
-      flex:1 1 200px;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;
-      font-size:13.5px;color:var(--fg);background:var(--surface);
-      padding:10px 12px;border-radius:16px;border:1px solid var(--line);
+      flex:1 1 220px;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;
+      font-size:14px;color:var(--fg);background:var(--bg);padding:10px 12px;border-radius:14px;border:1px solid var(--line);
     }
     .copy-btn{
-      padding:9px 16px;border-radius:999px;border:none;
-      background:var(--primary);color:var(--on-primary);
-      font:800 13px var(--font);cursor:pointer;
+      padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--accent);
+      color:var(--accent-fg);font:700 13px var(--font);cursor:pointer;
     }
-
-    footer{text-align:center;font-size:13.5px;color:var(--muted);padding-bottom:10px}
-    .rb{display:block;height:8px;border-radius:99px;margin:16px auto 0;width:min(220px,56%);background:linear-gradient(90deg,#e5484d,#f5a524,#f2e12b,#3ccf7c,#2bb5e8,#6a5cf5,#d357e6,#e5484d)}
-
-    @media (prefers-reduced-motion:reduce){
-      *{transition:none!important}
-      .reveal{opacity:1;transform:none;filter:none}
-    }
+    footer{text-align:center;font-size:14px;color:var(--muted);padding-bottom:12px}
+    .rb{display:block;height:8px;border-radius:99px;margin:18px auto 0;width:min(240px,60%);background:linear-gradient(90deg,#e5484d,#f5a524,#f2e12b,#3ccf7c,#2bb5e8,#6a5cf5,#d357e6,#e5484d)}
+    @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   </style>
 </head>
 <body>
   <div class="blob b1"></div><div class="blob b2"></div>
   <main>
-    <div class="topbar reveal">
-      <div class="m3-chip"><span class="dot" aria-hidden="true"></span> Material You · E2EE · Прямые звонки</div>
+    <div class="topbar">
       <button class="theme-btn" id="themeToggle" type="button" aria-label="Переключить тему">
         <span id="themeIcon">🌙</span>
         <span id="themeLabel">Тёмная</span>
       </button>
     </div>
 
-    <section class="hero reveal">
+    <section class="hero">
       <svg class="mark" viewBox="0 0 108 108" role="img" aria-label="Значок blisschat">
         <defs><linearGradient id="g" x1="54" y1="32.40" x2="54" y2="88.00" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0e6c6c"/><stop offset="1" stop-color="#a91410"/></linearGradient></defs>
         <rect width="108" height="108" rx="28" fill="#a2e0d1"/>
@@ -432,18 +120,6 @@
       </svg>
       <h1>blisschat</h1>
       <p class="tag">Мессенджер, который читаете только вы. Шифрование, звонки и ваш цвет.</p>
-
-      <div class="chat-strip" aria-hidden="true">
-        <div class="bubble bubble-in">
-          Ключи сгенерированы локально — сервер видит только шифртекст 🔒
-          <span class="bubble-time">12:59</span>
-        </div>
-        <div class="bubble bubble-out">
-          Звучит надёжно. Скачиваю APK и проверяю SHA-256 ✓✓
-          <span class="bubble-time">13:00</span>
-        </div>
-      </div>
-
       <a class="cta" id="dl" href="https://github.com/tamirlanmarkaba1-beep/BlissAi/releases/download/Messenger/app-debug.apk" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 20h14"/></svg>
         Скачать для Android
@@ -456,155 +132,33 @@
       <div class="rb" aria-hidden="true"></div>
     </section>
 
-    <div class="notice reveal" id="warn" hidden></div>
+    <div class="notice" id="warn" hidden></div>
 
-    <section class="reveal">
-      <div class="sec-head">
-        <h2>3D-экраны по слоям</h2>
-        <p class="sec-sub">Слои фото выходят вперёд · Нажмите для просмотра</p>
-      </div>
-
-      <div class="shots-grid">
-        <div class="shot-item reveal">
-          <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-phase="0" data-shot="Screenshot_20261125_105603_blisschat.jpg" data-caption="Лента чатов, категории, боты и нижняя панель">
-              <div class="phone-base">
-                <img class="photo-slice" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
-                <div class="mock-ui">
-                  <div class="mock-bar"></div>
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                </div>
-                <img class="photo-slice slice-top" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-mid" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-              </div>
-            </div>
-          </div>
-          <div>
-            <p class="shot-title">Лента чатов</p>
-            <p class="shot-desc">Категории, каналы и боты</p>
-          </div>
-        </div>
-
-        <div class="shot-item reveal">
-          <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-phase="1.5" data-shot="Screenshot_20261125_105658_blisschat.jpg" data-caption="Личный диалог с зашифрованным закрепом и реакциями">
-              <div class="phone-base">
-                <img class="photo-slice" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
-                <div class="mock-ui">
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                  <div class="mock-bar" style="width:78%;margin-left:auto"></div>
-                  <div class="mock-bar" style="width:72%"></div>
-                </div>
-                <img class="photo-slice slice-top" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-mid" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-              </div>
-            </div>
-          </div>
-          <div>
-            <p class="shot-title">Диалог и шифр</p>
-            <p class="shot-desc">Закрепы, ответы и реакции</p>
-          </div>
-        </div>
-
-        <div class="shot-item reveal">
-          <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-phase="3.1" data-shot="Screenshot_20261125_105708_blisschat.jpg" data-caption="Профиль пользователя, значки и вкладки медиа">
-              <div class="phone-base">
-                <img class="photo-slice" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
-                <div class="mock-ui">
-                  <div class="mock-ava" style="width:36px;height:36px;margin:4px auto"></div>
-                  <div class="mock-row" style="height:26px"><div class="mock-lines"><span></span></div></div>
-                  <div class="mock-row" style="height:36px"><div class="mock-lines"><span></span><span></span></div></div>
-                </div>
-                <img class="photo-slice slice-top" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-mid" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-              </div>
-            </div>
-          </div>
-          <div>
-            <p class="shot-title">Профиль и медиа</p>
-            <p class="shot-desc">Значки и вложения по вкладкам</p>
-          </div>
-        </div>
-
-        <div class="shot-item reveal">
-          <div class="phone-stage">
-            <div class="phone-3d" role="button" tabindex="0" data-phase="4.7" data-shot="Screenshot_20261125_105716_blisschat.jpg" data-caption="Настройки темы, ключей шифрования, плагинов и стикеров">
-              <div class="phone-base">
-                <img class="photo-slice" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true">
-                <div class="mock-ui">
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                  <div class="mock-row"><span class="mock-ava"></span><div class="mock-lines"><span></span><span></span></div></div>
-                </div>
-                <img class="photo-slice slice-top" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-mid" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy" onerror="this.hidden=true">
-              </div>
-            </div>
-          </div>
-          <div>
-            <p class="shot-title">Настройки</p>
-            <p class="shot-desc">Цвета, ключи и плагины</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="reveal">
-      <div class="sec-head">
-        <h2>Что внутри</h2>
-        <p class="sec-sub">Всё для быстрой и приватной переписки</p>
-      </div>
+    <section>
+      <h2>Что внутри</h2>
       <div class="feat">
-        <div class="f reveal">
-          <span class="f-badge">Безопасность</span>
-          <h3>Сквозное шифрование</h3>
-          <p>Сообщения, фото и звонки шифруются на вашем телефоне. Сервер видит только набор непонятных символов.</p>
-        </div>
-        <div class="f reveal">
-          <span class="f-badge">Связь</span>
-          <h3>Аудио и видеозвонки</h3>
-          <p>Прямое соединение между телефонами. Микрофон, динамик, смена камеры, завершение вызова.</p>
-        </div>
-        <div class="f reveal">
-          <span class="f-badge">Чаты</span>
-          <h3>Группы и значки</h3>
-          <p>Галочки доставки и прочтения, реакции, удаление у всех или только у себя, значки верификации.</p>
-        </div>
-        <div class="f reveal">
-          <span class="f-badge">Material You</span>
-          <h3>Ваш цвет</h3>
-          <p>Один ползунок меняет акценты и свечение фона по всему спектру, от красного до фиолетового.</p>
-        </div>
+        <div class="f"><h3>Сквозное шифрование</h3><p>Сообщения, фото и звонки шифруются на вашем телефоне. Сервер видит только набор непонятных символов.</p></div>
+        <div class="f"><h3>Аудио и видеозвонки</h3><p>Прямое соединение между телефонами. Микрофон, динамик, смена камеры, завершение вызова.</p></div>
+        <div class="f"><h3>Группы и значки</h3><p>Галочки доставки и прочтения, реакции, удаление у всех или только у себя, значки верификации.</p></div>
+        <div class="f"><h3>Ваш цвет</h3><p>Один ползунок меняет акценты и свечение фона по всему спектру, от красного до фиолетового.</p></div>
       </div>
     </section>
 
-    <section class="reveal">
-      <div class="sec-head">
-        <h2>Как установить</h2>
-        <p class="sec-sub">Три простых шага на Android</p>
-      </div>
+    <section>
+      <h2>Как установить</h2>
       <ol>
-        <li class="reveal"><div><b>Скачайте файл</b><span>Нажмите кнопку выше. Телефон сохранит app-debug.apk в загрузки.</span></div></li>
-        <li class="reveal"><div><b>Разрешите установку</b><span>Если Android спросит, включите «Установка из неизвестных источников» для браузера, которым скачали файл.</span></div></li>
-        <li class="reveal"><div><b>Откройте файл и войдите</b><span>Нажмите «Установить», затем войдите по email или через Google.</span></div></li>
+        <li><div><b>Скачайте файл</b><span>Нажмите кнопку выше. Телефон сохранит app-debug.apk в загрузки.</span></div></li>
+        <li><div><b>Разрешите установку</b><span>Если Android спросит, включите «Установка из неизвестных источников» для браузера, которым скачали файл.</span></div></li>
+        <li><div><b>Откройте файл и войдите</b><span>Нажмите «Установить», затем войдите по email или через Google.</span></div></li>
       </ol>
     </section>
 
-    <section class="reveal">
-      <div class="sec-head">
-        <h2>Частые вопросы</h2>
-        <p class="sec-sub">Коротко о работе приложения</p>
-      </div>
-      <details class="reveal"><summary>Почему Android предупреждает об установке?</summary><p>Приложение ставится напрямую из файла, а не из магазина, поэтому система просит подтверждение. Предупреждение появляется для всех APK вне Google Play.</p></details>
-      <details class="reveal"><summary>Что с чатами после смены телефона?</summary><p>Ключ шифрования хранится только на устройстве. На новом телефоне создаётся новый ключ, и старая переписка на нём не откроется.</p></details>
-      <details class="reveal"><summary>Придёт ли уведомление о звонке?</summary><p>Пока нет. Входящий звонок звонит, только когда приложение открыто.</p></details>
-      <details class="reveal">
+    <section>
+      <h2>Частые вопросы</h2>
+      <details><summary>Почему Android предупреждает об установке?</summary><p>Приложение ставится напрямую из файла, а не из магазина, поэтому система просит подтверждение. Предупреждение появляется для всех APK вне Google Play.</p></details>
+      <details><summary>Что с чатами после смены телефона?</summary><p>Ключ шифрования хранится только на устройстве. На новом телефоне создаётся новый ключ, и старая переписка на нём не откроется.</p></details>
+      <details><summary>Придёт ли уведомление о звонке?</summary><p>Пока нет. Входящий звонок звонит, только когда приложение открыто.</p></details>
+      <details>
         <summary>Как проверить, что файл не подменён?</summary>
         <p>Контрольная сумма SHA-256 файла app-debug.apk:</p>
         <div class="hash-box">
@@ -612,21 +166,11 @@
           <button class="copy-btn" id="copySha" type="button">Копировать</button>
         </div>
       </details>
-      <details class="reveal"><summary>Есть ли версия для iPhone?</summary><p>Нет, blisschat работает только на Android.</p></details>
+      <details><summary>Есть ли версия для iPhone?</summary><p>Нет, blisschat работает только на Android.</p></details>
     </section>
 
-    <footer class="reveal">blisschat · Material You · Nunito</footer>
+    <footer>blisschat · Material You · Nunito</footer>
   </main>
-
-  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр скриншота">
-    <div class="lightbox-box">
-      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Закрыть">✕</button>
-      <div class="lightbox-screen">
-        <img id="lightboxImg" src="" alt="" draggable="false">
-      </div>
-      <p class="lightbox-caption" id="lightboxCaption"></p>
-    </div>
-  </div>
 
   <script>
     const GH_OWNER = "tamirlanmarkaba1-beep";
@@ -674,117 +218,7 @@
 
     syncReleaseFromGithub();
 
-    // Плавное выдвижение + размытие при прокрутке
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const revealEls = document.querySelectorAll(".reveal");
-
-    if (prefersReduced || !("IntersectionObserver" in window)) {
-      revealEls.forEach(el => el.classList.add("is-visible"));
-    } else {
-      const revealObserver = new IntersectionObserver((entries, obs) => {
-        entries.forEach((entry, idx) => {
-          if (entry.isIntersecting) {
-            setTimeout(() => {
-              entry.target.classList.add("is-visible");
-            }, idx * 50);
-            obs.unobserve(entry.target);
-          }
-        });
-      }, {
-        threshold: 0.08,
-        rootMargin: "0px 0px -24px 0px"
-      });
-
-      revealEls.forEach(el => revealObserver.observe(el));
-    }
-
-    // Авто-движение телефонов в 3D + плавный отклик на касание/курсор + выход слоёв фото
-    const phones = Array.from(document.querySelectorAll(".phone-3d"));
-    const phoneStates = phones.map(el => ({
-      el,
-      phase: parseFloat(el.getAttribute("data-phase") || "0"),
-      targetRx: 0,
-      targetRy: 0,
-      targetPx: 0,
-      targetPy: 0,
-      curRx: 0,
-      curRy: 0,
-      curPx: 0,
-      curPy: 0,
-      pointerActive: false,
-      pointerUntil: 0
-    }));
-
-    phones.forEach((phone, idx) => {
-      if (prefersReduced) return;
-      const st = phoneStates[idx];
-
-      function updateFromPointer(clientX, clientY) {
-        const rect = phone.getBoundingClientRect();
-        const nx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-        const ny = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-        st.targetRy = (nx - 0.5) * 28;
-        st.targetRx = (0.5 - ny) * 28;
-        st.targetPx = (nx - 0.5) * 10;
-        st.targetPy = (ny - 0.5) * 10;
-        st.pointerActive = true;
-        st.pointerUntil = performance.now() + 1400;
-      }
-
-      phone.addEventListener("pointermove", e => updateFromPointer(e.clientX, e.clientY));
-      phone.addEventListener("pointerdown", e => updateFromPointer(e.clientX, e.clientY));
-      phone.addEventListener("pointerup", () => {
-        st.pointerActive = false;
-      });
-      phone.addEventListener("pointerleave", () => {
-        st.pointerActive = false;
-      });
-      phone.addEventListener("pointercancel", () => {
-        st.pointerActive = false;
-      });
-    });
-
-    if (!prefersReduced && phoneStates.length) {
-      let startTs = null;
-      function animatePhones(ts) {
-        if (startTs === null) startTs = ts;
-        const t = (ts - startTs) / 1000;
-
-        for (const st of phoneStates) {
-          const usePointer = st.pointerActive || ts < st.pointerUntil;
-          let goalRx, goalRy, goalPx, goalPy;
-
-          if (usePointer) {
-            goalRx = st.targetRx;
-            goalRy = st.targetRy;
-            goalPx = st.targetPx;
-            goalPy = st.targetPy;
-          } else {
-            const waveX = Math.sin(t * 1.15 + st.phase);
-            const waveY = Math.cos(t * 0.9 + st.phase * 0.8);
-            goalRy = waveX * 13;
-            goalRx = waveY * 10;
-            goalPx = waveX * 5.5;
-            goalPy = waveY * 4.5;
-          }
-
-          st.curRx += (goalRx - st.curRx) * 0.08;
-          st.curRy += (goalRy - st.curRy) * 0.08;
-          st.curPx += (goalPx - st.curPx) * 0.08;
-          st.curPy += (goalPy - st.curPy) * 0.08;
-
-          st.el.style.setProperty("--rx", `${st.curRx.toFixed(2)}deg`);
-          st.el.style.setProperty("--ry", `${st.curRy.toFixed(2)}deg`);
-          st.el.style.setProperty("--px", `${st.curPx.toFixed(2)}px`);
-          st.el.style.setProperty("--py", `${st.curPy.toFixed(2)}px`);
-        }
-
-        requestAnimationFrame(animatePhones);
-      }
-      requestAnimationFrame(animatePhones);
-    }
-
-    // Тема M3 с сохранением в localStorage
+    // Переключатель темы с сохранением в localStorage
     const root = document.documentElement;
     const themeToggle = document.getElementById("themeToggle");
     const themeIcon = document.getElementById("themeIcon");
@@ -810,45 +244,6 @@
       const isDark = root.getAttribute("data-theme") === "dark" ||
         (!root.hasAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
       applyTheme(isDark ? "light" : "dark");
-    });
-
-    // Просмотр скриншотов в лайтбоксе
-    const lightbox = document.getElementById("lightbox");
-    const lightboxImg = document.getElementById("lightboxImg");
-    const lightboxCaption = document.getElementById("lightboxCaption");
-    const lightboxClose = document.getElementById("lightboxClose");
-
-    function openShot(phone) {
-      const src = phone.getAttribute("data-shot");
-      const cap = phone.getAttribute("data-caption") || "";
-      if (!src) return;
-      lightboxImg.src = src;
-      lightboxImg.alt = cap;
-      lightboxCaption.textContent = cap;
-      lightbox.hidden = false;
-    }
-
-    function closeShot() {
-      lightbox.hidden = true;
-      lightboxImg.src = "";
-    }
-
-    phones.forEach(phone => {
-      phone.addEventListener("click", () => openShot(phone));
-      phone.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openShot(phone);
-        }
-      });
-    });
-
-    lightboxClose.addEventListener("click", closeShot);
-    lightbox.addEventListener("click", e => {
-      if (e.target === lightbox) closeShot();
-    });
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !lightbox.hidden) closeShot();
     });
 
     // Копирование SHA-256
