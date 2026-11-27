@@ -516,7 +516,7 @@
 
       <h1>blisschat</h1>
       <p class="tag">Мессенджер, который читаете только вы</p>
-      <a class="cta" id="dl" href="https://github.com/tamirlanmarkaba1-beep/Blisschat/releases/latest" target="_blank" rel="noopener">
+      <a class="cta" id="dl" href="https://github.com/tamirlanmarkaba1-beep/BlissAi/releases/download/Messenger/app-debug.apk" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 20h14"/></svg>
         <span>Скачать для Android</span>
       </a>
@@ -625,7 +625,7 @@
         <p class="sec-sub">Три простых шага на Android</p>
       </div>
       <ol>
-        <li class="reveal"><div><b>Скачайте файл</b><span>Нажмите кнопку выше. Телефон сохранит APK-файл в загрузки.</span></div></li>
+        <li class="reveal"><div><b>Скачайте файл</b><span>Нажмите кнопку выше. Телефон сохранит app-debug.apk в загрузки.</span></div></li>
         <li class="reveal"><div><b>Разрешите установку</b><span>Если Android спросит, включите «Установка из неизвестных источников» для браузера, которым скачали файл.</span></div></li>
         <li class="reveal"><div><b>Откройте файл и войдите</b><span>Нажмите «Установить», затем войдите по email или через Google.</span></div></li>
       </ol>
@@ -641,7 +641,7 @@
       <details class="reveal"><summary>Придёт ли уведомление о звонке?</summary><p>Пока нет. Входящий звонок звонит, только когда приложение открыто.</p></details>
       <details class="reveal">
         <summary>Как проверить, что файл не подменён?</summary>
-        <p>Контрольная сумма SHA-256 релизной сборки:</p>
+        <p>Контрольная сумма SHA-256 файла app-debug.apk:</p>
         <div class="hash-box">
           <code class="hash-code" id="shaText">d10475bb903e6714e39c2ad3817f9e4bfa6ac62d71b40d71efe38b4329a4bc1b</code>
           <button class="copy-btn" id="copySha" type="button">Копировать</button>
@@ -650,7 +650,7 @@
       <details class="reveal"><summary>Есть ли версия для iPhone?</summary><p>Нет, blisschat работает только на Android.</p></details>
     </section>
 
-    <footer class="reveal">blisschat · Blisschat</footer>
+    <footer class="reveal">blisschat · BlissAi</footer>
   </main>
 
   <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр скриншота">
@@ -682,8 +682,8 @@
     );
 
     const GH_OWNER = "tamirlanmarkaba1-beep";
-    const GH_REPO = "Blisschat";
-    const FALLBACK_APK_URL = `https://github.com/${GH_OWNER}/${GH_REPO}/releases/latest`;
+    const GH_REPO = "BlissAi";
+    const FALLBACK_APK_URL = "https://github.com/tamirlanmarkaba1-beep/BlissAi/releases/download/Messenger/app-debug.apk";
 
     const dl = document.getElementById("dl");
     const warn = document.getElementById("warn");
@@ -708,8 +708,6 @@
           dl.href = apkAsset.browser_download_url;
           const sizeStr = formatMb(apkAsset.size);
           if (sizeStr) sizeMeta.textContent = `APK, ${sizeStr}`;
-        } else if (release.html_url) {
-          dl.href = release.html_url;
         }
         if (release.tag_name) {
           verMeta.textContent = `Версия ${String(release.tag_name).replace(/^v/i, "")}`;
@@ -717,7 +715,7 @@
       } catch {
         dl.href = FALLBACK_APK_URL;
         warn.hidden = false;
-        warn.textContent = "GitHub API временно недоступен — открывается страница последнего релиза Blisschat.";
+        warn.textContent = "GitHub API временно недоступен — используется прямая ссылка на сборку.";
       }
     }
 
