@@ -1,256 +1,669 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>BlissChat — Вход через Google</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>blisschat — Скачать</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
-      --bg-dark: #0e1c1b;
-      --surface: #1b2827;
-      --surface-variant: #253635;
-      --primary: #80d5c9;
-      --on-primary: #003732;
-      --text-main: #e3eceb;
-      --text-muted: #9eb3b0;
-      --outline: #52736f;
-      --error: #ffb4ab;
-      --font: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --bg: #0f1414;
+      --card: #182120;
+      --card-2: #1f2b2a;
+      --fg: #eef5f4;
+      --muted: #9eb3b0;
+      --accent: #35b9b2;
+      --on-accent: #052321;
+      --line: rgba(255, 255, 255, .10);
+      --frame: #252f2e;
+      --font: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f3f7f6;
+      --card: #ffffff;
+      --card-2: #eaf1f0;
+      --fg: #122120;
+      --muted: #526966;
+      --accent: #0f9d95;
+      --on-accent: #ffffff;
+      --line: rgba(18, 33, 32, .12);
+      --frame: #d8e4e2;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: var(--font);
       -webkit-tap-highlight-color: transparent;
       -webkit-user-select: none;
       user-select: none;
     }
 
     body {
-      min-height: 100dvh;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-      position: relative;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font);
+      font-size: 16.5px;
+      line-height: 1.55;
+      padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(40px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
       overflow-x: hidden;
+      transition: background-color .28s ease, color .28s ease;
     }
 
-    /* Плавные фигуры Material You на фоне */
-    .m3-bg {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-
-    .m3-wave-top {
-      position: absolute;
-      width: clamp(240px, 56vw, 360px);
-      height: clamp(240px, 56vw, 360px);
-      top: -75px;
-      right: -75px;
-      opacity: 0.22;
-      animation: waveSpin 30s linear infinite;
-    }
-
-    .m3-wave-bottom {
-      position: absolute;
-      width: clamp(260px, 62vw, 400px);
-      height: clamp(260px, 62vw, 400px);
-      bottom: -95px;
-      left: -95px;
-      opacity: 0.18;
-      animation: waveSpin 38s linear infinite reverse;
-    }
-
-    @keyframes waveSpin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    .card {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 400px;
-      background: rgba(20, 36, 35, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(128, 213, 201, 0.16);
-      border-radius: 32px;
-      padding: 32px 24px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* Твоё фото по центру вместо иконки + переключение на второе по нажатию */
-    .photo-btn {
-      width: 104px;
-      height: 104px;
-      margin-bottom: 20px;
-      border: 1.5px solid rgba(128, 213, 201, 0.28);
-      border-radius: 28px;
-      padding: 0;
-      background: var(--surface);
-      overflow: hidden;
-      cursor: pointer;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-      transition: transform 0.16s ease;
-      -webkit-touch-callout: none;
-    }
-
-    .photo-btn:active {
-      transform: scale(0.96);
-    }
-
-    .photo-btn img {
-      width: 100%;
-      height: 100%;
-      display: block;
-      object-fit: cover;
+    img {
+      max-width: 100%;
       -webkit-touch-callout: none;
       -webkit-user-drag: none;
     }
 
-    h1 {
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--primary);
-      margin-bottom: 6px;
+    [hidden] {
+      display: none !important;
     }
 
-    .subtitle {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 28px;
-      line-height: 1.4;
-    }
-
-    .btn-google {
-      width: 100%;
-      height: 54px;
-      border-radius: 27px;
-      border: 1.5px solid var(--outline);
-      background: var(--surface);
-      color: var(--text-main);
-      font-size: 16px;
-      font-weight: 700;
+    main {
+      max-width: 760px;
+      margin: 0 auto;
       display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(10px);
+      transition:
+        opacity .65s cubic-bezier(.22, 1, .36, 1),
+        transform .75s cubic-bezier(.22, 1, .36, 1),
+        filter 1s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .theme-btn {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 12px;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--fg);
+      font: 700 13.5px var(--font);
       cursor: pointer;
-      transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
     }
 
-    .btn-google:hover {
-      background: var(--surface-variant);
-      border-color: var(--primary);
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
     }
 
-    .btn-google:active {
-      transform: scale(0.98);
+    .mark {
+      width: min(38vw, 144px);
+      height: auto;
+      border-radius: 36px;
     }
 
-    .btn-google:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      width: 100%;
-      height: 52px;
-      margin-top: 14px;
-      border-radius: 26px;
-      border: none;
-      background: var(--primary);
-      color: var(--on-primary);
-      font-size: 16px;
+    h1 {
+      font-size: clamp(36px, 8vw, 54px);
+      line-height: 1.05;
       font-weight: 800;
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
+      letter-spacing: -.02em;
     }
 
-    .status {
-      margin-top: 18px;
+    .tag {
+      max-width: 30ch;
+      font-size: clamp(17px, 3.6vw, 20px);
+      color: var(--muted);
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      margin-top: 8px;
+      padding: 16px 30px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--on-accent);
+      font: 800 17.5px var(--font);
+      text-decoration: none;
+      box-shadow: 0 12px 26px rgba(53, 185, 178, .28);
+      transition: transform .18s cubic-bezier(.3, 1.5, .5, 1), filter .18s ease;
+    }
+
+    .cta:hover {
+      filter: brightness(1.05);
+      transform: translateY(-2px);
+    }
+
+    .cta:active {
+      transform: scale(.97);
+    }
+
+    .cta svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    .meta {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px 14px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .meta li + li::before {
+      content: "·";
+      margin-right: 14px;
+    }
+
+    .notice {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .sec-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: clamp(22px, 4.6vw, 28px);
+      font-weight: 800;
+      letter-spacing: -.015em;
+    }
+
+    .sec-sub {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .shots-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px 16px;
+      align-items: start;
+    }
+
+    .shot-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .phone-stage {
+      width: 100%;
+      max-width: 196px;
+      perspective: 820px;
+      padding: 10px 6px;
+    }
+
+    .phone-3d {
+      --rx: 0deg;
+      --ry: 0deg;
+      --px: 0px;
+      --py: 0px;
+      position: relative;
+      width: 100%;
+      background: var(--frame);
+      border-radius: 30px;
+      padding: 7px;
+      border: 1.5px solid var(--line);
+      box-shadow: 0 22px 42px rgba(0, 0, 0, .42);
+      transform-style: preserve-3d;
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+      cursor: pointer;
+      touch-action: pan-y;
+    }
+
+    .phone-base {
+      position: relative;
+      border-radius: 23px;
+      overflow: hidden;
+      aspect-ratio: 9 / 19.2;
+      background: var(--card-2);
+      transform: translateZ(6px);
+    }
+
+    .photo-slice {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    .slice-top {
+      z-index: 2;
+      clip-path: inset(0% 0% 72% 0% round 22px 22px 6px 6px);
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .42));
+      transform: translate3d(calc(var(--px) * 1.1), calc(var(--py) * 1.1), 22px);
+    }
+
+    .slice-mid {
+      z-index: 3;
+      clip-path: inset(28% 0% 34% 0% round 10px);
+      filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .50));
+      transform: translate3d(calc(var(--px) * 2.0), calc(var(--py) * 2.0), 40px);
+    }
+
+    .slice-bottom {
+      z-index: 4;
+      clip-path: inset(66% 0% 0% 0% round 6px 6px 22px 22px);
+      filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .58));
+      transform: translate3d(calc(var(--px) * 2.8), calc(var(--py) * 2.8), 58px);
+    }
+
+    .shot-title {
+      font-size: 14.5px;
+      font-weight: 700;
+    }
+
+    .shot-desc {
+      margin-top: 2px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .feat {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      gap: 14px;
+    }
+
+    .f {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: 20px 22px;
+    }
+
+    .f h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .f p {
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    ol {
+      list-style: none;
+      display: grid;
+      gap: 12px;
+      counter-reset: s;
+    }
+
+    ol li {
+      counter-increment: s;
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 16px 18px;
+    }
+
+    ol li::before {
+      content: counter(s);
+      flex: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: var(--on-accent);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    ol b {
+      display: block;
+      font-weight: 700;
+    }
+
+    ol span {
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    details {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 14px 18px;
+    }
+
+    details + details {
+      margin-top: 10px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+      list-style: none;
+    }
+
+    details p {
+      margin-top: 10px;
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .hash-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .hash-code {
+      flex: 1 1 200px;
+      word-break: break-all;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--card-2);
+      border: 1px solid var(--line);
+    }
+
+    .copy-btn {
+      padding: 9px 15px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card-2);
+      color: var(--fg);
+      font: 700 13px var(--font);
+      cursor: pointer;
+    }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, .78);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .lightbox-box {
+      position: relative;
+      max-width: 330px;
+      width: 100%;
+      background: var(--frame);
+      border-radius: 34px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .lightbox-screen {
+      border-radius: 26px;
+      overflow: hidden;
+      aspect-ratio: 9 / 19.2;
+      background: var(--card-2);
+    }
+
+    .lightbox-screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .lightbox-caption {
+      margin-top: 10px;
       font-size: 14px;
       font-weight: 600;
-      min-height: 20px;
-      color: var(--text-muted);
-      word-break: break-word;
     }
 
-    .status.error {
-      color: var(--error);
+    .lightbox-close {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--fg);
+      font: 700 16px var(--font);
+      cursor: pointer;
     }
 
-    .status.ok {
-      color: var(--primary);
+    footer {
+      text-align: center;
+      font-size: 13.5px;
+      color: var(--muted);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation: none !important;
-        transition: none !important;
+      .reveal, .reveal.is-visible {
+        opacity: 1;
+        transform: none;
+        filter: none;
+        transition: none;
+      }
+      .cta {
+        transition: none;
       }
     }
   </style>
 </head>
 <body>
-  <div class="m3-bg" aria-hidden="true">
-    <svg class="m3-wave-top" viewBox="0 0 240 240">
-      <path id="bgWave1" fill="#1e7b74"></path>
-    </svg>
-    <svg class="m3-wave-bottom" viewBox="0 0 240 240">
-      <path id="bgWave2" fill="#165752"></path>
-    </svg>
-  </div>
+  <main>
+    <div class="topbar reveal">
+      <button class="theme-btn" id="themeToggle" type="button" aria-label="Сменить тему">
+        <span id="themeIcon">☀️</span>
+        <span id="themeLabel">Светлая</span>
+      </button>
+    </div>
 
-  <main class="card">
-    <button id="photoToggle" class="photo-btn" type="button" aria-label="Сменить фото">
-      <img id="photoImg" src="Screenshot_20261118_101200_Vexel.jpg" alt="" draggable="false" />
-    </button>
-
-    <h1>Добро пожаловать</h1>
-    <p class="subtitle">Войдите через Google, чтобы вернуться в BlissChat</p>
-
-    <button id="googleBtn" class="btn-google" type="button">
-      <svg width="20" height="20" viewBox="0 0 24 24">
-        <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
-        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.5H12v4.8h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
-        <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/>
-        <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 21.1 7.4 24 12 24z"/>
+    <section class="hero reveal">
+      <svg class="mark" viewBox="0 0 120 120" role="img" aria-label="Значок blisschat">
+        <defs>
+          <linearGradient id="blissRingGrad" x1="60" y1="22" x2="60" y2="108" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#0d6c6c" />
+            <stop offset="48%" stop-color="#5c2824" />
+            <stop offset="100%" stop-color="#b5110d" />
+          </linearGradient>
+        </defs>
+        <rect width="120" height="120" rx="30" fill="#a8e2d4" />
+        <path d="M-8,-8 L64,-8 C54,14 34,26 12,26 C2,26 -4,22 -8,18 Z" fill="#cbece4" />
+        <path d="M128,48 L128,128 L56,128 C64,104 82,86 102,74 C112,68 120,58 128,48 Z" fill="#5b6f6f" />
+        <line x1="62" y1="34" x2="77" y2="17" stroke="#0d6c6c" stroke-width="9.5" stroke-linecap="round" />
+        <path id="blissFlowerPath" fill="url(#blissRingGrad)" fill-rule="evenodd" />
       </svg>
-      <span>Продолжить с Google</span>
-    </button>
 
-    <a id="openAppBtn" class="btn-primary" href="#">Открыть BlissChat</a>
-    <div id="status" class="status"></div>
+      <h1>blisschat</h1>
+      <p class="tag">Мессенджер, который читаете только вы</p>
+      <a class="cta" id="dl" href="https://github.com/tamirlanmarkaba1-beep/Blisschat/releases/latest" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 20h14"/></svg>
+        <span>Скачать для Android</span>
+      </a>
+      <ul class="meta" id="meta">
+        <li id="verMeta">Версия 2.0.0</li>
+        <li>Android 8.0 и новее</li>
+        <li id="sizeMeta">APK, 61,7 МБ</li>
+      </ul>
+    </section>
+
+    <div class="notice reveal" id="warn" hidden></div>
+
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>3D-экраны по слоям</h2>
+        <p class="sec-sub">Слои выходят в объём · Нажмите для просмотра</p>
+      </div>
+
+      <div class="shots-grid">
+        <div class="shot-item reveal">
+          <div class="phone-stage">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="0" data-shot="Screenshot_20261125_105603_blisschat.jpg" data-caption="Лента чатов, категории, боты и нижняя панель">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105603_blisschat.jpg" alt="" draggable="false" loading="lazy">
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="shot-title">Лента чатов</p>
+            <p class="shot-desc">Категории, каналы и боты</p>
+          </div>
+        </div>
+
+        <div class="shot-item reveal">
+          <div class="phone-stage">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="1.5" data-shot="Screenshot_20261125_105658_blisschat.jpg" data-caption="Личный диалог с зашифрованным закрепом и реакциями">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105658_blisschat.jpg" alt="" draggable="false" loading="lazy">
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="shot-title">Диалог и шифр</p>
+            <p class="shot-desc">Закрепы, ответы и реакции</p>
+          </div>
+        </div>
+
+        <div class="shot-item reveal">
+          <div class="phone-stage">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="3.1" data-shot="Screenshot_20261125_105708_blisschat.jpg" data-caption="Профиль пользователя, значки и вкладки медиа">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105708_blisschat.jpg" alt="" draggable="false" loading="lazy">
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="shot-title">Профиль и медиа</p>
+            <p class="shot-desc">Значки и вложения по вкладкам</p>
+          </div>
+        </div>
+
+        <div class="shot-item reveal">
+          <div class="phone-stage">
+            <div class="phone-3d" role="button" tabindex="0" data-phase="4.7" data-shot="Screenshot_20261125_105716_blisschat.jpg" data-caption="Настройки темы, ключей шифрования, плагинов и стикеров">
+              <div class="phone-base">
+                <img class="photo-slice" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-top" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-mid" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy">
+                <img class="photo-slice slice-bottom" src="Screenshot_20261125_105716_blisschat.jpg" alt="" draggable="false" loading="lazy">
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="shot-title">Настройки</p>
+            <p class="shot-desc">Цвета, ключи и плагины</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>Что внутри</h2>
+        <p class="sec-sub">Всё для быстрой и приватной переписки</p>
+      </div>
+      <div class="feat">
+        <div class="f reveal"><h3>Сквозное шифрование</h3><p>Сообщения, фото и звонки шифруются на вашем телефоне. Сервер видит только набор непонятных символов.</p></div>
+        <div class="f reveal"><h3>Аудио и видеозвонки</h3><p>Прямое соединение между телефонами. Микрофон, динамик, смена камеры, завершение вызова.</p></div>
+        <div class="f reveal"><h3>Группы и значки</h3><p>Галочки доставки и прочтения, реакции, удаление у всех или только у себя, значки верификации.</p></div>
+        <div class="f reveal"><h3>Свой цвет</h3><p>Настраивайте акценты интерфейса под себя и переключайтесь между тёмной и светлой темой.</p></div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>Как установить</h2>
+        <p class="sec-sub">Три простых шага на Android</p>
+      </div>
+      <ol>
+        <li class="reveal"><div><b>Скачайте файл</b><span>Нажмите кнопку выше. Телефон сохранит APK-файл в загрузки.</span></div></li>
+        <li class="reveal"><div><b>Разрешите установку</b><span>Если Android спросит, включите «Установка из неизвестных источников» для браузера, которым скачали файл.</span></div></li>
+        <li class="reveal"><div><b>Откройте файл и войдите</b><span>Нажмите «Установить», затем войдите по email или через Google.</span></div></li>
+      </ol>
+    </section>
+
+    <section class="reveal">
+      <div class="sec-head">
+        <h2>Частые вопросы</h2>
+        <p class="sec-sub">Коротко о работе приложения</p>
+      </div>
+      <details class="reveal"><summary>Почему Android предупреждает об установке?</summary><p>Приложение ставится напрямую из файла, а не из магазина, поэтому система просит подтверждение. Предупреждение появляется для всех APK вне Google Play.</p></details>
+      <details class="reveal"><summary>Что с чатами после смены телефона?</summary><p>Ключ шифрования хранится только на устройстве. На новом телефоне создаётся новый ключ, и старая переписка на нём не откроется.</p></details>
+      <details class="reveal"><summary>Придёт ли уведомление о звонке?</summary><p>Пока нет. Входящий звонок звонит, только когда приложение открыто.</p></details>
+      <details class="reveal">
+        <summary>Как проверить, что файл не подменён?</summary>
+        <p>Контрольная сумма SHA-256 релизной сборки:</p>
+        <div class="hash-box">
+          <code class="hash-code" id="shaText">d10475bb903e6714e39c2ad3817f9e4bfa6ac62d71b40d71efe38b4329a4bc1b</code>
+          <button class="copy-btn" id="copySha" type="button">Копировать</button>
+        </div>
+      </details>
+      <details class="reveal"><summary>Есть ли версия для iPhone?</summary><p>Нет, blisschat работает только на Android.</p></details>
+    </section>
+
+    <footer class="reveal">blisschat · Blisschat</footer>
   </main>
 
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр скриншота">
+    <div class="lightbox-box">
+      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Закрыть">✕</button>
+      <div class="lightbox-screen">
+        <img id="lightboxImg" src="" alt="" draggable="false">
+      </div>
+      <p class="lightbox-caption" id="lightboxCaption"></p>
+    </div>
+  </div>
+
   <script>
-    const FIRST_PHOTO = "Screenshot_20261118_101200_Vexel.jpg";
-    const SECOND_PHOTO = "1795540246710.jpg";
-
-    const preloadSecond = new Image();
-    preloadSecond.src = SECOND_PHOTO;
-
     function buildSmoothWave(cx, cy, baseR, amp, waves, samples = 240) {
       let d = "";
       for (let i = 0; i <= samples; i++) {
@@ -263,66 +676,187 @@
       return d + "Z";
     }
 
-    document.getElementById("bgWave1").setAttribute("d", buildSmoothWave(120, 120, 92, 9, 12, 240));
-    document.getElementById("bgWave2").setAttribute("d", buildSmoothWave(120, 120, 96, 10, 10, 240));
+    document.getElementById("blissFlowerPath").setAttribute(
+      "d",
+      buildSmoothWave(60, 65, 42.5, 3.2, 16, 280) + " " + buildSmoothWave(60, 65, 23.5, 2.1, 16, 240)
+    );
 
-    const photoToggle = document.getElementById("photoToggle");
-    const photoImg = document.getElementById("photoImg");
-    let isSecond = false;
+    const GH_OWNER = "tamirlanmarkaba1-beep";
+    const GH_REPO = "Blisschat";
+    const FALLBACK_APK_URL = `https://github.com/${GH_OWNER}/${GH_REPO}/releases/latest`;
 
-    photoToggle.addEventListener("click", () => {
-      isSecond = !isSecond;
-      photoImg.src = isSecond ? SECOND_PHOTO : FIRST_PHOTO;
-    });
-  </script>
+    const dl = document.getElementById("dl");
+    const warn = document.getElementById("warn");
+    const verMeta = document.getElementById("verMeta");
+    const sizeMeta = document.getElementById("sizeMeta");
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBUXc71LMSwk0Nb82bieZFZbGeMtJ5uU2s",
-      authDomain: "bitrate-71684.firebaseapp.com",
-      projectId: "bitrate-71684",
-      storageBucket: "bitrate-71684.firebasestorage.app",
-      messagingSenderId: "794345122154",
-      appId: "1:794345122154:web:05b6f2241d89652b895d13"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-
-    const btn = document.getElementById("googleBtn");
-    const openAppBtn = document.getElementById("openAppBtn");
-    const statusEl = document.getElementById("status");
-
-    function setStatus(text, type = "") {
-      statusEl.textContent = text;
-      statusEl.className = "status " + type;
+    function formatMb(bytes) {
+      if (!bytes || typeof bytes !== "number") return null;
+      return (bytes / (1024 * 1024)).toFixed(1).replace(".", ",") + " МБ";
     }
 
-    btn.addEventListener("click", async () => {
-      btn.disabled = true;
-      setStatus("Открываем окно выбора аккаунта...");
-
+    async function syncReleaseFromGithub() {
+      const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/releases/latest`;
       try {
-        const result = await signInWithPopup(auth, provider);
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const idToken = credential?.idToken || await result.user.getIdToken();
+        const res = await fetch(apiUrl, { headers: { "Accept": "application/vnd.github+json" } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const release = await res.json();
+        const assets = Array.isArray(release.assets) ? release.assets : [];
+        const apkAsset = assets.find(a => a.name && a.name.toLowerCase().endsWith(".apk")) || assets[0];
 
-        const deepLink = `blisschat://auth?idToken=${encodeURIComponent(idToken)}`;
-        openAppBtn.href = deepLink;
-        openAppBtn.style.display = "flex";
+        if (apkAsset && apkAsset.browser_download_url) {
+          dl.href = apkAsset.browser_download_url;
+          const sizeStr = formatMb(apkAsset.size);
+          if (sizeStr) sizeMeta.textContent = `APK, ${sizeStr}`;
+        } else if (release.html_url) {
+          dl.href = release.html_url;
+        }
+        if (release.tag_name) {
+          verMeta.textContent = `Версия ${String(release.tag_name).replace(/^v/i, "")}`;
+        }
+      } catch {
+        dl.href = FALLBACK_APK_URL;
+        warn.hidden = false;
+        warn.textContent = "GitHub API временно недоступен — открывается страница последнего релиза Blisschat.";
+      }
+    }
 
-        setStatus(`Вы вошли как ${result.user.email}. Возвращаем в приложение...`, "ok");
-        window.location.href = deepLink;
-      } catch (err) {
-        console.error(err);
-        setStatus(`Ошибка входа: ${err.code || err.message}`, "error");
-      } finally {
-        btn.disabled = false;
+    syncReleaseFromGithub();
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealEls = document.querySelectorAll(".reveal");
+
+    if (prefersReduced || !("IntersectionObserver" in window)) {
+      revealEls.forEach(el => el.classList.add("is-visible"));
+    } else {
+      const obs = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry, i) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => entry.target.classList.add("is-visible"), i * 45);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: "0px 0px -20px 0px" });
+      revealEls.forEach(el => obs.observe(el));
+    }
+
+    const phones = Array.from(document.querySelectorAll(".phone-3d"));
+    const phoneStates = phones.map(el => ({
+      el,
+      phase: parseFloat(el.getAttribute("data-phase") || "0"),
+      targetRx: 0, targetRy: 0, targetPx: 0, targetPy: 0,
+      curRx: 0, curRy: 0, curPx: 0, curPy: 0,
+      pointerActive: false,
+      pointerUntil: 0
+    }));
+
+    phones.forEach((phone, idx) => {
+      if (prefersReduced) return;
+      const st = phoneStates[idx];
+      function onMove(x, y) {
+        const rect = phone.getBoundingClientRect();
+        const nx = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+        const ny = Math.max(0, Math.min(1, (y - rect.top) / rect.height));
+        st.targetRy = (nx - 0.5) * 28;
+        st.targetRx = (0.5 - ny) * 28;
+        st.targetPx = (nx - 0.5) * 10;
+        st.targetPy = (ny - 0.5) * 10;
+        st.pointerActive = true;
+        st.pointerUntil = performance.now() + 1400;
+      }
+      phone.addEventListener("pointermove", e => onMove(e.clientX, e.clientY));
+      phone.addEventListener("pointerdown", e => onMove(e.clientX, e.clientY));
+      phone.addEventListener("pointerup", () => { st.pointerActive = false; });
+      phone.addEventListener("pointerleave", () => { st.pointerActive = false; });
+      phone.addEventListener("pointercancel", () => { st.pointerActive = false; });
+    });
+
+    if (!prefersReduced && phoneStates.length) {
+      let startTs = null;
+      function tick(ts) {
+        if (startTs === null) startTs = ts;
+        const t = (ts - startTs) / 1000;
+        for (const st of phoneStates) {
+          const active = st.pointerActive || ts < st.pointerUntil;
+          const gRx = active ? st.targetRx : Math.cos(t * 0.9 + st.phase * 0.8) * 10;
+          const gRy = active ? st.targetRy : Math.sin(t * 1.15 + st.phase) * 13;
+          const gPx = active ? st.targetPx : Math.sin(t * 1.15 + st.phase) * 5.5;
+          const gPy = active ? st.targetPy : Math.cos(t * 0.9 + st.phase * 0.8) * 4.5;
+
+          st.curRx += (gRx - st.curRx) * 0.08;
+          st.curRy += (gRy - st.curRy) * 0.08;
+          st.curPx += (gPx - st.curPx) * 0.08;
+          st.curPy += (gPy - st.curPy) * 0.08;
+
+          st.el.style.setProperty("--rx", `${st.curRx.toFixed(2)}deg`);
+          st.el.style.setProperty("--ry", `${st.curRy.toFixed(2)}deg`);
+          st.el.style.setProperty("--px", `${st.curPx.toFixed(2)}px`);
+          st.el.style.setProperty("--py", `${st.curPy.toFixed(2)}px`);
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    const themeToggle = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
+    const themeLabel = document.getElementById("themeLabel");
+
+    function applyTheme(mode) {
+      const isLight = mode === "light";
+      document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
+      localStorage.setItem("blisschat_theme", isLight ? "light" : "dark");
+      themeIcon.textContent = isLight ? "🌙" : "☀️";
+      themeLabel.textContent = isLight ? "Тёмная" : "Светлая";
+    }
+
+    applyTheme(localStorage.getItem("blisschat_theme"));
+    themeToggle.addEventListener("click", () => {
+      const isLight = document.documentElement.getAttribute("data-theme") === "light";
+      applyTheme(isLight ? "dark" : "light");
+    });
+
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightboxImg");
+    const lightboxCaption = document.getElementById("lightboxCaption");
+    const lightboxClose = document.getElementById("lightboxClose");
+
+    function openShot(phone) {
+      const src = phone.getAttribute("data-shot");
+      if (!src) return;
+      lightboxImg.src = src;
+      lightboxCaption.textContent = phone.getAttribute("data-caption") || "";
+      lightbox.hidden = false;
+    }
+
+    function closeShot() {
+      lightbox.hidden = true;
+      lightboxImg.src = "";
+    }
+
+    phones.forEach(phone => {
+      phone.addEventListener("click", () => openShot(phone));
+      phone.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openShot(phone);
+        }
+      });
+    });
+
+    lightboxClose.addEventListener("click", closeShot);
+    lightbox.addEventListener("click", e => { if (e.target === lightbox) closeShot(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !lightbox.hidden) closeShot(); });
+
+    const copySha = document.getElementById("copySha");
+    const shaText = document.getElementById("shaText").textContent.trim();
+    copySha.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(shaText);
+        copySha.textContent = "Скопировано";
+        setTimeout(() => { copySha.textContent = "Копировать"; }, 1800);
+      } catch {
+        copySha.textContent = "Ошибка";
       }
     });
   </script>
